@@ -2,15 +2,15 @@
 // (data stays in this browser only). Fill the values in to go live.
 window.AKOMA_CONFIG = {
   // From Supabase > Project Settings > API
-  SUPABASE_URL: '',
-  SUPABASE_ANON_KEY: '',
+  SUPABASE_URL: 'https://kphqgpdxcscjiylzuman.supabase.co',
+  SUPABASE_ANON_KEY: 'sb_publishable_oIUJbnbOQMYu02Lrep93zA_ga6oHCZ9',
 
   // Payments are disabled: all member features are free.
   PAYMENTS_MODE: 'disabled',
   PAYSTACK_PUBLIC_KEY: '',
 
   // Shown on the Help page
-  SUPPORT_WHATSAPP: '',
+  SUPPORT_WHATSAPP: '0256250046',
   SUPPORT_EMAIL: '',
 
   // All member features are free. No subscription or daily request limit.
