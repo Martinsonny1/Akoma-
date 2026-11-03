@@ -46,3 +46,10 @@ do $$ begin
 exception when duplicate_object then null;
 when undefined_object then null;
 end $$;
+
+
+-- Grant only the table privileges used by the trusted livekit-call Edge Function.
+-- These grants do not disable RLS or expose the service_role key to clients.
+grant select on public.matches, public.blocks, public.profiles to service_role;
+grant select on public.call_settings to service_role;
+grant select, insert, update on public.calls to service_role;

@@ -337,3 +337,14 @@ input[type=text],input[type=tel],input[type=number],select.full{font-size:16px;m
 .ak-call-actions button{border:0;border-radius:999px;padding:13px 17px;font-weight:700;cursor:pointer}.ak-call-answer{background:#35c78b;color:#08261b}.ak-call-decline{background:#e64c5d;color:white}.ak-call-control{background:#ffffff20;color:white}.ak-call-control.selected{background:#d6a94c;color:#1c1608}
 .ak-call-disclaimer{font-size:11px;color:#c0d0cb;margin:18px 0 0}.ak-remote-video{position:absolute;inset:0;border-radius:28px;overflow:hidden;z-index:0}.ak-remote-video video{width:100%;height:100%;object-fit:cover}.ak-call-card.is-video{background:#071012}.ak-call-card.is-video>*:not(.ak-remote-video):not(.ak-self-video){z-index:1}.ak-call-card.is-video .ak-call-avatar{background:#071012aa}.ak-self-video{position:absolute;right:14px;top:62px;width:100px;height:140px;border-radius:14px;overflow:hidden;z-index:2;background:#243638}.ak-self-video video{width:100%;height:100%;object-fit:cover}
 @media(max-width:480px){.ak-call-card{min-height:80dvh;width:100%;border-radius:24px}.ak-call-card.is-video{min-height:88dvh}.ak-self-video{width:82px;height:116px}}
+
+
+/* Calling controls: reliable tap targets and clear disabled/busy feedback. */
+#ak-call-layer { pointer-events: none; }
+#ak-call-layer.visible { pointer-events: auto; }
+#ak-call-layer .ak-call-card, #ak-call-layer button { pointer-events: auto; }
+#ak-call-layer .ak-call-actions button { min-height: 46px; touch-action: manipulation; -webkit-tap-highlight-color: transparent; }
+#ak-call-layer .ak-call-actions button:disabled { opacity: .58; cursor: wait; }
+#ak-call-layer button:focus-visible { outline: 3px solid #f0cf7b; outline-offset: 3px; }
+#ak-call-layer.minimised { pointer-events: none; }
+#ak-call-layer.minimised .ak-call-card { pointer-events: auto; }

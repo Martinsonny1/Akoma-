@@ -28,13 +28,29 @@ Deno.serve(async (req) => {
     const me = user.id;
 
     async function authorizeMatch(matchId: string, otherId?: string) {
+      if (typeof matchId !== 'string' || !matchId.trim()) throw new Error('A valid match ID is required.');
       const { data: match, error } = await admin.from('matches').select('id,woman_id,man_id,status').eq('id', matchId).eq('status', 'active').maybeSingle();
-      if (error || !match) throw new Error('This match is no longer active.');
+      if (error) {
+        console.error('AKOMA MATCH LOOKUP ERROR:', { matchId, code: error.code, message: error.message, details: error.details, hint: error.hint });
+        throw new Error('Match database lookup failed. Check Edge Function logs.');
+      }
+      if (!match) {
+        console.error('AKOMA MATCH NOT FOUND:', { matchId, expectedStatus: 'active' });
+        throw new Error('No active match found for this ID.');
+      }
       const other = match.woman_id === me ? match.man_id : match.man_id === me ? match.woman_id : null;
       if (!other || (otherId && other !== otherId)) throw new Error('You are not a member of this match.');
-      const { data: blocked } = await admin.from('blocks').select('blocker').or(`and(blocker.eq.${me},blocked.eq.${other}),and(blocker.eq.${other},blocked.eq.${me})`).limit(1);
+      const { data: blocked, error: blockError } = await admin.from('blocks').select('blocker').or(`and(blocker.eq.${me},blocked.eq.${other}),and(blocker.eq.${other},blocked.eq.${me})`).limit(1);
+      if (blockError) {
+        console.error('AKOMA BLOCK LOOKUP ERROR:', { code: blockError.code, message: blockError.message, details: blockError.details, hint: blockError.hint });
+        throw new Error('Unable to verify blocking status.');
+      }
       if (blocked?.length) throw new Error('Calling is unavailable because this connection is blocked.');
-      const { data: profiles } = await admin.from('profiles').select('id,status').in('id', [me, other]);
+      const { data: profiles, error: profileError } = await admin.from('profiles').select('id,status').in('id', [me, other]);
+      if (profileError) {
+        console.error('AKOMA PROFILE LOOKUP ERROR:', { code: profileError.code, message: profileError.message, details: profileError.details, hint: profileError.hint });
+        throw new Error('Unable to verify account approval.');
+      }
       if (!profiles || profiles.length !== 2 || profiles.some(p => p.status !== 'approved')) throw new Error('Both accounts must be approved to call.');
       return { match, other };
     }
@@ -42,7 +58,11 @@ Deno.serve(async (req) => {
     if (action === 'start') {
       if (!['audio', 'video'].includes(call_type)) return json({ error: 'invalid_call_type' }, 400);
       const { other } = await authorizeMatch(match_id);
-      const { data: pref } = await admin.from('call_settings').select('incoming_enabled').eq('user_id', other).maybeSingle();
+      const { data: pref, error: prefError } = await admin.from('call_settings').select('incoming_enabled').eq('user_id', other).maybeSingle();
+      if (prefError) {
+        console.error('AKOMA CALL SETTINGS ERROR:', { code: prefError.code, message: prefError.message, details: prefError.details, hint: prefError.hint });
+        throw new Error('Unable to check incoming call settings.');
+      }
       if (pref?.incoming_enabled === false) return json({ error: 'This person is not accepting calls right now.' }, 403);
       const room = `akoma_${crypto.randomUUID().replaceAll('-', '')}`;
       const { data: call, error } = await admin.from('calls').insert({ match_id, caller_id: me, recipient_id: other, call_type, room_name: room }).select('*').single();
@@ -97,6 +117,7 @@ Deno.serve(async (req) => {
     }
   } catch (err) {
     const message = err instanceof Error ? err.message : 'request_failed';
+    console.error('AKOMA LIVEKIT CALL ERROR:', message);
     return json({ error: message }, 400);
   }
 });
