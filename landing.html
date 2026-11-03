@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Akoma Waitlist</title>
+<meta name="description" content="Akoma is private, verified dating in Ghana for women who want someone with energy. Join the waitlist.">
+<meta name="theme-color" content="#0F4C4F">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=DM+Sans:wght@400;500;700&display=swap">
+<style>
+:root{
+  --bg:#F4F7F6; --surface:#FFFFFF; --surface2:#E8F0EE; --ink:#10262B; --muted:#586C70; --line:#D3DDDB;
+  --brand:#0F4C4F; --on-brand:#FFFFFF; --accent:#E0952B; --on-accent:#2A1900; --tint:#DCEBE9; --danger:#B93A2E; --good:#1E7F55;
+  --f-display:'Bricolage Grotesque',system-ui,sans-serif; --f-body:'DM Sans',system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#071113; --surface:#0E1F22; --surface2:#152A2E; --ink:#E4EEEC; --muted:#8CA3A6; --line:#22373B;
+    --brand:#3AA3A6; --on-brand:#04191A; --accent:#E8A94F; --on-accent:#2A1900; --tint:#123136; --danger:#F07A6E; --good:#4CC08A; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#071113; --surface:#0E1F22; --surface2:#152A2E; --ink:#E4EEEC; --muted:#8CA3A6; --line:#22373B;
+  --brand:#3AA3A6; --on-brand:#04191A; --accent:#E8A94F; --on-accent:#2A1900; --tint:#123136; --danger:#F07A6E; --good:#4CC08A; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:16px;line-height:1.55}
+h1,h2,h3{font-family:var(--f-display);margin:0;letter-spacing:-.015em;text-wrap:balance}
+p{margin:0}
+[hidden]{display:none!important}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.wrap{max-width:1000px;margin:0 auto;padding-left:max(18px,env(safe-area-inset-left));padding-right:max(18px,env(safe-area-inset-right))}
+header.hero{background:linear-gradient(165deg,#0F4C4F,#07282A);color:#fff;padding-block:28px 56px}
+.brand{display:flex;align-items:center;gap:10px;font-family:var(--f-display);font-weight:700;font-size:22px}
+.brand i{width:34px;height:34px;border-radius:10px;background:var(--accent);display:grid;place-items:center;color:var(--on-accent)}
+.brand svg{width:20px;height:20px}
+.hero-grid{display:grid;grid-template-columns:1.15fr 1fr;gap:36px;align-items:center;margin-top:44px}
+.hero h1{font-size:clamp(34px,6vw,58px);line-height:1.02}
+.hero p.lead{font-size:18px;opacity:.9;margin-top:16px;max-width:34ch}
+.card{background:var(--surface);color:var(--ink);border-radius:22px;padding:22px;display:flex;flex-direction:column;gap:14px;box-shadow:0 18px 50px rgba(0,0,0,.18)}
+.card h2{font-size:22px}
+.seg{display:grid;grid-template-columns:1fr 1fr;background:var(--surface2);border-radius:14px;padding:4px}
+.seg button{border:0;background:none;padding:10px;border-radius:11px;font-weight:700;cursor:pointer;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--brand);color:var(--on-brand)}
+label{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:500;color:var(--muted)}
+input,select{width:100%;background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font:inherit;font-size:16px;color:var(--ink)}
+.btn{border:0;border-radius:14px;padding:14px 18px;font-weight:700;font-size:16px;cursor:pointer;background:var(--accent);color:var(--on-accent)}
+.btn:disabled{opacity:.6;cursor:wait}
+.err{color:var(--danger);font-size:14px}
+.ok{background:color-mix(in srgb,var(--good) 14%,var(--surface));border:1px solid var(--good);border-radius:14px;padding:14px}
+.small{font-size:13px;color:var(--muted)}
+section{padding-block:44px}
+.points{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:16px;margin-top:20px}
+.point{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:6px}
+.point h3{font-size:18px}
+.point p{color:var(--muted);font-size:15px}
+details{border-bottom:1px solid var(--line);padding:14px 0}
+summary{font-weight:700;cursor:pointer}
+details p{margin-top:8px;color:var(--muted)}
+footer{padding-block:28px 40px;color:var(--muted);font-size:13px}
+@media (max-width:760px){.hero-grid{grid-template-columns:1fr;gap:26px;margin-top:30px}}
+</style>
+</head>
+<body>
+<header class="hero"><div class="wrap">
+  <div class="brand"><i><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7c0 5.600-7.500 10.200-7.500 10.200z"/></svg></i>Akoma</div>
+  <div class="hero-grid">
+    <div><h1>Meet someone with energy.</h1><p class="lead">A more thoughtful way to meet in Ghana. Verified profiles, safer conversations and genuine connections — completely free for everyone.</p></div>
+    <form class="card" id="wl" novalidate>
+      <h2>Get early access</h2>
+      <div class="seg" role="group" aria-label="I am a"><button type="button" id="rw" aria-pressed="true">I'm a woman</button><button type="button" id="rm" aria-pressed="false">I'm a man</button></div>
+      <label>First name<input id="nm" type="text" autocomplete="given-name" maxlength="60" required></label>
+      <label>Mobile number<input id="ph" type="tel" inputmode="numeric" autocomplete="tel-national" placeholder="024 000 0000" required></label>
+      <label>City<select id="ct"><option>Accra</option><option>Tema</option><option>Kumasi</option><option>Cape Coast</option><option>Takoradi</option><option>Tamale</option></select></label>
+      <p class="err" id="err" hidden></p>
+      <button class="btn" id="go" type="submit">Join the waitlist</button>
+      <p class="small" id="note">No subscriptions, no premium tiers and no payment required.</p>
+      <div class="ok" id="done" hidden><b id="donetitle">You are on the list.</b><p id="donetext" class="small"></p></div>
+    </form>
+  </div>
+</div></header>
+
+<section><div class="wrap"><h2>Built for privacy and respect</h2>
+  <div class="points">
+    <div class="point"><h3>Everyone is verified</h3><p>A selfie check for every member, and a Ghana Card check for men. A person approves each profile.</p></div>
+    <div class="point"><h3>You choose who can contact you</h3><p>Any member can send a message request. A chat opens only if it is accepted, and you control your photo visibility.</p></div>
+    <div class="point"><h3>No money talk</h3><p>Requests for money, airtime or gifts are blocked and reported. Anyone who tries is removed.</p></div>
+  </div></div></section>
+
+<section style="padding-top:0"><div class="wrap"><h2>Questions</h2>
+  <details><summary>Who is Akoma for?</summary><p>Adults aged 18 and over who want to meet genuine people in a respectful, safe environment.</p></details>
+  <details><summary>Is it free?</summary><p>Yes. Every feature is free for every member. There are no subscriptions, paid boosts or locked features.</p></details>
+  <details><summary>Will anyone see my number?</summary><p>No. Your number is used for sign-in and never shown on your profile.</p></details>
+  <details><summary>Can I hide my photo?</summary><p>Yes. You can hide your profile photo so only people you match with can see it.</p></details>
+</div></section>
+<footer><div class="wrap">Akoma. Adults only.</div></footer>
+
+<script src="js/config.js"></script>
+<script src="js/shared.js"></script>
+<script src="js/api-demo.js"></script>
+<script src="js/api-supabase.js"></script>
+<script src="js/api.js"></script>
+<script>
+(function () {
+  var U = window.AkomaUtil, API = window.API, role = 'woman';
+  var $ = function (s) { return document.querySelector(s); };
+  function setRole(r) {
+    role = r;
+    $('#rw').setAttribute('aria-pressed', r === 'woman'); $('#rm').setAttribute('aria-pressed', r === 'man');
+    $('#note').textContent = r === 'woman' ? 'No subscriptions, no premium tiers and no payment required.' : 'Everyone gets the same free features. We only text you about your invite.';
+  }
+  $('#rw').onclick = function () { setRole('woman'); };
+  $('#rm').onclick = function () { setRole('man'); };
+  $('#wl').addEventListener('submit', function (e) {
+    e.preventDefault();
+    var err = $('#err'); err.hidden = true;
+    var name = $('#nm').value.trim();
+    if (!name) { err.textContent = 'Enter your first name.'; err.hidden = false; return; }
+    if (!U.normalizePhone($('#ph').value)) { err.textContent = 'Enter a valid Ghana mobile number, for example 024 000 0000.'; err.hidden = false; return; }
+    $('#go').disabled = true;
+    API.init().then(function () {
+      return API.joinWaitlist({ name: name, phone: $('#ph').value, city: $('#ct').value, role: role });
+    }).then(function (r) {
+      $('#done').hidden = false; $('#go').hidden = true;
+      $('#donetitle').textContent = r.duplicate ? 'You are already on the list.' : 'You are on the list.';
+      $('#donetext').textContent = role === 'woman' ? 'We will text you when your invite is ready. Everyone gets the same free access.' : 'We will text you when your invite is ready.';
+    }).catch(function (x) {
+      err.textContent = U.friendly(x); err.hidden = false; $('#go').disabled = false;
+    });
+  });
+})();
+</script>
+</body>
+</html>

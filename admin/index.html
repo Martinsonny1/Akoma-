@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Akoma Admin</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700&family=DM+Sans:wght@400;500;700&display=swap">
+<style>
+:root{
+  --bg:#E9EEEC; --surface:#FFFFFF; --surface2:#F2F6F5; --ink:#10262B; --muted:#586C70; --line:#D3DDDB;
+  --brand:#0F4C4F; --on-brand:#FFFFFF; --accent:#E0952B; --on-accent:#2A1900; --tint:#DCEBE9;
+  --good:#1E7F55; --warn:#A8480A; --danger:#B93A2E;
+  --f-display:'Bricolage Grotesque',system-ui,sans-serif; --f-body:'DM Sans',system-ui,sans-serif;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#071113; --surface:#0E1F22; --surface2:#152A2E; --ink:#E4EEEC; --muted:#8CA3A6; --line:#22373B;
+    --brand:#3AA3A6; --on-brand:#04191A; --accent:#E8A94F; --on-accent:#2A1900; --tint:#123136;
+    --good:#4CC08A; --warn:#E9A066; --danger:#F07A6E; color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#071113; --surface:#0E1F22; --surface2:#152A2E; --ink:#E4EEEC; --muted:#8CA3A6; --line:#22373B;
+  --brand:#3AA3A6; --on-brand:#04191A; --accent:#E8A94F; --on-accent:#2A1900; --tint:#123136;
+  --good:#4CC08A; --warn:#E9A066; --danger:#F07A6E; color-scheme:dark;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:15px;line-height:1.45;min-height:100vh}
+button,input,select,textarea{font:inherit;color:inherit}
+h1,h2,h3{font-family:var(--f-display);margin:0;letter-spacing:-.01em}
+p{margin:0}
+.muted{color:var(--muted)} .small{font-size:13px}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+[hidden]{display:none!important}
+
+.top{position:sticky;top:0;z-index:5;background:var(--brand);color:var(--on-brand);padding:12px max(16px,env(safe-area-inset-right)) 0 max(16px,env(safe-area-inset-left))}
+.top-in{max-width:1100px;margin:0 auto;display:flex;flex-direction:column;gap:10px}
+.top-row{display:flex;align-items:center;justify-content:space-between;gap:12px}
+.top h1{font-size:20px}
+.top button.link{background:none;border:0;color:inherit;opacity:.85;cursor:pointer;text-decoration:underline;font-size:13px}
+.tabs{display:flex;gap:2px;overflow-x:auto;scrollbar-width:none}
+.tabs::-webkit-scrollbar{display:none}
+.tabs button{background:none;border:0;color:inherit;opacity:.78;padding:9px 14px;cursor:pointer;font-weight:500;white-space:nowrap;border-bottom:3px solid transparent;display:flex;gap:6px;align-items:center}
+.tabs button[aria-selected="true"]{opacity:1;border-color:var(--accent);font-weight:700}
+.count{min-width:20px;height:20px;border-radius:10px;background:var(--accent);color:var(--on-accent);font-size:12px;font-weight:700;display:inline-grid;place-items:center;padding:0 6px}
+
+main{max-width:1100px;margin:0 auto;padding:22px max(16px,env(safe-area-inset-right)) 60px max(16px,env(safe-area-inset-left));display:flex;flex-direction:column;gap:18px}
+.login{max-width:380px;margin:12vh auto 0;background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:24px;display:flex;flex-direction:column;gap:14px}
+.login h1{font-size:26px}.brandmark{width:44px;height:44px;border-radius:14px;background:var(--tint);color:var(--brand);display:grid;place-items:center;font-size:24px;font-weight:700}
+label.f{display:flex;flex-direction:column;gap:6px;font-size:13px;font-weight:500;color:var(--muted)}
+input[type=text],input[type=tel],input[type=search],input[type=email],input[type=password],select,textarea{width:100%;background:var(--surface2);border:1px solid var(--line);border-radius:12px;padding:11px 13px;font-size:15px;color:var(--ink)}
+textarea{min-height:64px}
+.btn{border:0;border-radius:12px;padding:10px 16px;font-weight:700;cursor:pointer;background:var(--surface2);color:var(--ink);font-size:14px;border:1px solid var(--line)}
+.btn.primary{background:var(--brand);color:var(--on-brand);border-color:var(--brand)}
+.btn.gold{background:var(--accent);color:var(--on-accent);border-color:var(--accent)}
+.btn.danger{background:none;color:var(--danger);border-color:var(--danger)}
+.btn.sm{padding:6px 12px;font-size:13px;border-radius:10px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.err{color:var(--danger);font-size:13px}
+
+.tiles{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px}
+.tile{background:var(--surface);border:1px solid var(--line);border-radius:16px;padding:14px 16px;display:flex;flex-direction:column;gap:2px;text-align:left;cursor:default}
+button.tile{cursor:pointer}
+.tile b{font-family:var(--f-display);font-size:30px;line-height:1.1}
+.tile.alert{border-color:var(--accent);background:color-mix(in srgb,var(--accent) 12%,var(--surface))}
+.panel{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:18px;display:flex;flex-direction:column;gap:12px}
+.panel h2{font-size:18px}
+.bar{height:12px;border-radius:6px;background:var(--surface2);overflow:hidden;border:1px solid var(--line)}
+.bar i{display:block;height:100%;background:var(--brand)}
+.bar.gold i{background:var(--accent)}
+.row{display:flex;gap:10px;align-items:center}
+.wrap{flex-wrap:wrap}
+.grow{flex:1;min-width:0}
+.badge{display:inline-flex;align-items:center;font-size:12px;font-weight:700;padding:3px 9px;border-radius:999px;background:var(--tint);color:var(--brand);white-space:nowrap}
+.badge.good{background:color-mix(in srgb,var(--good) 16%,var(--surface));color:var(--good)}
+.badge.warn{background:color-mix(in srgb,var(--warn) 16%,var(--surface));color:var(--warn)}
+.badge.bad{background:color-mix(in srgb,var(--danger) 16%,var(--surface));color:var(--danger)}
+.case{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.case-head{display:flex;gap:10px;align-items:baseline;flex-wrap:wrap}
+.case-head h3{font-size:19px}
+.imgs{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.imgs figure{margin:0;display:flex;flex-direction:column;gap:4px}
+.imgs img,.imgs .ph{width:100%;aspect-ratio:3/4;object-fit:cover;border-radius:12px;background:var(--surface2);border:1px solid var(--line);display:grid;place-items:center;text-align:center;color:var(--muted);font-size:12px;padding:8px}
+.imgs figcaption{font-size:12px;color:var(--muted)}
+.big{max-width:420px}
+.big img,.big .ph{aspect-ratio:4/3}
+.actions{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.actions select{width:auto;min-width:220px;flex:0 1 260px}
+.chat{background:var(--surface2);border-radius:12px;padding:10px;display:flex;flex-direction:column;gap:6px}
+.chat div{font-size:13px;padding:6px 10px;border-radius:10px;max-width:85%;background:var(--surface);border:1px solid var(--line)}
+.chat div.reported{align-self:flex-start}
+.chat div.reporter{align-self:flex-end}
+.chat div.flag{border-color:var(--danger)}
+.tablewrap{overflow-x:auto;border:1px solid var(--line);border-radius:14px}
+table{border-collapse:collapse;width:100%;min-width:640px;background:var(--surface)}
+th,td{text-align:left;padding:10px 12px;border-bottom:1px solid var(--line);font-size:14px;white-space:nowrap}
+th{font-size:12px;letter-spacing:.04em;text-transform:uppercase;color:var(--muted);background:var(--surface2)}
+tr:last-child td{border-bottom:0}
+td.num,th.num{text-align:right;font-variant-numeric:tabular-nums}
+.empty{padding:34px;text-align:center;color:var(--muted);background:var(--surface);border:1px dashed var(--line);border-radius:16px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(20px + env(safe-area-inset-bottom));background:var(--ink);color:var(--surface);padding:11px 16px;border-radius:12px;font-size:14px;z-index:20;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.demo{background:color-mix(in srgb,var(--accent) 22%,var(--surface));padding:7px max(16px,env(safe-area-inset-left));font-size:13px;text-align:center}
+</style>
+</head>
+<body>
+<div id="demo" class="demo" hidden>Demo mode. This dashboard shows the same sample data as the app demo, stored in this browser.</div>
+<div id="app"><div class="login"><div class="brandmark" aria-hidden="true">♥</div><h1>Akoma Admin</h1><p class="muted">Loading the admin dashboard…</p><p class="muted small">If this message stays here, check that the JavaScript files loaded correctly.</p></div></div>
+<script src="../js/config.js"></script>
+<script src="../js/shared.js"></script>
+<script src="../js/api-demo.js"></script>
+<script src="../js/api-supabase.js"></script>
+<script src="../js/api.js"></script>
+<script src="admin.js"></script>
+</body>
+</html>
