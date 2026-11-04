@@ -18,7 +18,7 @@
   });
   const DEMO = API.mode === 'demo';
   const TABS = [['overview', 'Overview'], ['queue', 'Verification'], ['reports', 'Reports'], ['posts', 'Posts'], ['users', 'Users'], ['payments', 'Payments'], ['waitlist', 'Waitlist']];
-  const REJECT = ['Photos are unclear', 'Selfie does not match photos', 'Profile looks fake', 'Age could not be confirmed', 'Other'];
+  const REJECT = ['ID photo is unclear', 'ID details could not be read', 'Name or age does not match the profile', 'Profile photos need review', 'Profile looks fake', 'Other'];
   const GOAL = 100;
   const S = { me: null, tab: 'overview', stats: null, data: {}, q: '', busy: false, email: '', toast: '' };
 
@@ -74,13 +74,13 @@
       if (!rows.length) return '<div class="empty">Nobody is waiting for review.</div>';
       return rows.map((r) => {
         const p = r.profile, man = p.role === 'man';
-        return `<div class="case"><div class="case-head"><h3>${esc(p.name)}, ${p.age}</h3><span class="badge">${esc(p.role)}</span><span class="muted small">${esc(p.city)} · joined ${date(p.created_at)}</span></div>
+        return `<div class="case"><div class="case-head"><h3>${esc(p.name)}, ${p.age}</h3><span class="badge">${esc(p.role)}</span><span class="muted small">${esc(p.city)} · joined ${date(p.created_at)} · waiting ${Math.max(0, Math.floor((Date.now() - new Date(p.created_at).getTime()) / 3600000))}h</span></div>
           ${p.bio ? `<p>${esc(p.bio)}</p>` : '<p class="muted">No bio.</p>'}
           <p class="small muted">Interests: ${esc((p.interests || []).join(', ') || 'none')} · Looking for: ${esc(p.looking_for)}</p>
-          <div class="imgs"><figure>${dataImg(r.selfie, 'selfie')}<figcaption>Selfie</figcaption></figure>
+          <div class="imgs"><figure>${dataImg(r.idCard, 'Government-issued ID')}<figcaption>Government-issued ID</figcaption></figure>
             ${(r.photos.length ? r.photos : [null]).map((u, i) => `<figure>${dataImg(u, 'photo')}<figcaption>Profile photo ${i + 1}</figcaption></figure>`).join('')}</div>
-          <p class="small muted">Check: the face in the selfie matches the photos. Reject anyone who looks under 18.</p>
-          <div class="actions"><button class="btn primary" data-act="approve" data-id="${p.id}">Approve</button>
+          <p class="small muted">${r.hasCard ? "Check that the ID is genuine and readable, the name and date of birth match the profile, and the ID photo reasonably matches the profile photos. Reject anyone who appears under 18. Handle ID images as confidential identity data." : "This member has not submitted an ID yet. They must upload one before approval."}</p>
+          <div class="actions"><button class="btn primary" data-act="approve" data-id="${p.id}" ${r.hasCard ? "" : 'disabled title="ID required before approval"'}>Approve</button>
             <select data-reason="${p.id}" aria-label="Rejection reason">${REJECT.map((x) => `<option>${x}</option>`).join('')}</select>
             <button class="btn danger" data-act="reject" data-id="${p.id}">Reject</button></div></div>`;
       }).join('');

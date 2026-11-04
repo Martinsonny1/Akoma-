@@ -33,38 +33,11 @@
     }
     return paths.map((p) => { const c = p && urlCache.get(bucket + '/' + p); return c ? c.url : null; });
   }
-  // supabase-js functions.invoke() only returns a Blob for application/octet-stream; for image/*, video/*
-  // and audio/* it returns text, which broke every media message. Call the Edge Function with fetch() instead.
-  async function mediaBlob(body) {
-    const { data } = await sb.auth.getSession();
-    const token = data && data.session && data.session.access_token;
-    if (!token) throw new Error('Please sign in again.');
-    const res = await fetch(String(C.SUPABASE_URL).replace(/\/+$/, '') + '/functions/v1/media-lifecycle', {
-      method: 'POST',
-      headers: { 'Authorization': 'Bearer ' + token, 'apikey': C.SUPABASE_ANON_KEY, 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-    if (!res.ok) { let t = ''; try { t = (await res.text()).slice(0, 80); } catch (_) {} throw new Error('Function HTTP ' + res.status + ' ' + t); }
-    const blob = await res.blob();
-    if (!blob.size) throw new Error('Media unavailable');
-    return blob;
-  }
-  async function chatMediaUrl(messageId, path) {
-    let edgeErr;
-    try { return URL.createObjectURL(await mediaBlob({ action: 'chat-download', message_id: Number(messageId) })); }
-    catch (e) { edgeErr = e; }
-    // Fallback: members of an active match may read normal/timed media straight from Storage (RLS enforces it).
-    if (path) {
-      const { data, error } = await sb.storage.from('chat-media').download(path);
-      if (!error && data && data.size) return URL.createObjectURL(data);
-      throw new Error((edgeErr && edgeErr.message) + ' | Storage: ' + ((error && error.message) || 'empty file'));
-    }
-    throw edgeErr;
-  }
-  async function withMedia(row) {
-    if (!(row && row.media_path && ['normal', 'timed'].includes(row.media_mode) && (!row.expires_at || new Date(row.expires_at) > new Date()))) return row;
-    try { return Object.assign({}, row, { media_url: await chatMediaUrl(row.id, row.media_path) }); }
-    catch (e) { console.warn('Akoma media load failed:', e); return Object.assign({}, row, { media_err: String((e && e.message) || e).slice(0, 160) }); }
+  async function chatMediaUrl(messageId) {
+    const { data, error } = await sb.functions.invoke('media-lifecycle', { body: { action: 'chat-download', message_id: Number(messageId) } });
+    if (error) throw error;
+    if (!(data instanceof Blob)) throw new Error('Media unavailable');
+    return URL.createObjectURL(data);
   }
   async function withUrls(cards, all) {
     const pick = (c) => (all ? c.photos : c.photos.slice(0, 1));
@@ -195,7 +168,7 @@
     },
     async grantVault(assetId, matchId, minutes) { return ok(sb.rpc('grant_vault_access',{p_asset:assetId,p_match:matchId,p_minutes:minutes})); },
     async revokeVault(grantId) { return ok(sb.rpc('revoke_vault_access',{p_grant:grantId})); },
-    async vaultImage(path) { return URL.createObjectURL(await mediaBlob({ action: 'vault-download', path })); },
+    async vaultImage(path) { const {data,error}=await sb.functions.invoke('media-lifecycle',{body:{action:'vault-download',path}}); if(error) throw error; if(!(data instanceof Blob)) throw new Error('Photo unavailable'); return URL.createObjectURL(data); },
     async deleteVault(assetId) { const path=await ok(sb.rpc('delete_vault_asset',{p_asset:assetId})); if(path) await ok(sb.storage.from('vault-media').remove([path])); return true; },
     async setOnlineVisibility(visible) { await ok(sb.rpc('set_online_visibility', { p_visible: !!visible })); _me = null; },
     async heartbeat() { if (uid()) await ok(sb.rpc('heartbeat')); },
@@ -261,7 +234,13 @@
     },
     async messages(matchId) {
       const rows = await ok(sb.from('messages').select('*').eq('match_id', matchId).order('created_at', { ascending: true }).limit(300));
-      return Promise.all(rows.map(withMedia));
+      return Promise.all(rows.map(async r => {
+        let media_url = null;
+        if (r.media_path && ['normal','timed'].includes(r.media_mode) && (!r.expires_at || new Date(r.expires_at) > new Date())) {
+          try { media_url = await chatMediaUrl(r.id); } catch (_) {}
+        }
+        return Object.assign({}, r, { media_url });
+      }));
     },
     async sendMessage(matchId, text) { return ok(sb.rpc('send_message', { m: matchId, msg: text })); },
     async sendMedia(matchId, blob, kind, mode, duration, recordingSeconds) {
@@ -276,23 +255,27 @@
       await ok(sb.storage.from('chat-media').upload(path, blob, { contentType: mime, upsert: false, cacheControl: '0' }));
       try {
         const row = await ok(sb.rpc('send_media_message', { p_match: matchId, p_path: path, p_kind: kind, p_mime: mime, p_mode: mode || 'normal', p_duration: duration || null, p_recording_seconds: recordingSeconds || null }));
-        return await withMedia(row);
+        if (mode === 'normal' || mode === 'timed') { try { row.media_url = await chatMediaUrl(row.id); } catch (_) {} }
+        return row;
       } catch (e) { await sb.storage.from('chat-media').remove([path]); throw e; }
     },
     async openMedia(messageId) {
-      return URL.createObjectURL(await mediaBlob({ action: 'open', message_id: Number(messageId) }));
+      const { data, error } = await sb.functions.invoke('media-lifecycle', { body: { action: 'open', message_id: Number(messageId) } });
+      if (error) throw error;
+      if (!(data instanceof Blob)) throw new Error('Media could not be opened.');
+      return URL.createObjectURL(data);
     },
     async closeMedia(messageId) { const {data,error}=await sb.functions.invoke('media-lifecycle',{body:{action:'close',message_id:Number(messageId)}}); if(error) throw error; return data; },
     // Live updates, with a slow poll as a safety net if the realtime socket drops.
     watchMessages(matchId, cb) {
       let last = 0, stopped = false;
       const ch = sb.channel('m-' + matchId + '-' + uuid())
-        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: 'match_id=eq.' + matchId }, async (p) => { last = Math.max(last, p.new.id); cb(await withMedia(p.new)); })
+        .on('postgres_changes', { event: 'INSERT', schema: 'public', table: 'messages', filter: 'match_id=eq.' + matchId }, async (p) => { last = Math.max(last, p.new.id); let row = p.new; if (row.media_path && ['normal','timed'].includes(row.media_mode) && (!row.expires_at || new Date(row.expires_at) > new Date())) { try { row = Object.assign({}, row, { media_url: await chatMediaUrl(row.id) }); } catch (_) {} } cb(row); })
         .subscribe();
       const timer = setInterval(async () => {
         if (stopped || document.hidden) return;
         const { data } = await sb.from('messages').select('*').eq('match_id', matchId).gt('id', last).order('id');
-        for (const m of (data || [])) { last = Math.max(last, m.id); cb(await withMedia(m)); }
+        for (const m of (data || [])) { last = Math.max(last, m.id); let row = m; if (m.media_path && ['normal','timed'].includes(m.media_mode) && (!m.expires_at || new Date(m.expires_at) > new Date())) { try { row = Object.assign({}, m, { media_url: await chatMediaUrl(m.id) }); } catch (_) {} } cb(row); }
       }, 8000);
       return () => { stopped = true; clearInterval(timer); sb.removeChannel(ch); };
     },

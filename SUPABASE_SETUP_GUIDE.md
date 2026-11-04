@@ -46,7 +46,7 @@ Akoma's member features are free: there are no subscriptions, premium tiers, pai
 
 1. In Supabase, open **Authentication** → **Sign In / Providers** (the exact label may vary).
 2. Open **Email** and make sure email sign-in is enabled.
-3. For account verification, enable **Confirm email**. Supabase will send a confirmation link to new users.
+3. For account verification, enable **Confirm email**. New Akoma registrations submit a government-issued ID (Ghana Card accepted) for manual review; the pending screen allows ID resubmission and does not unlock real member browsing or interactions. Supabase will send a confirmation link to new users.
 4. You do not need to enable Phone authentication or configure Twilio, Vonage, MessageBird, or another SMS provider.
 5. During development, use an email inbox you can access. After registering, open the confirmation email and follow its link, then return to Akoma and sign in.
 6. For production delivery, review Supabase's email sending limits and configure custom SMTP so confirmation and account emails are reliable.
@@ -134,7 +134,7 @@ If you already use Vercel for another project, create a separate project for Ako
 - Test with at least two separate accounts and devices: profile creation, admin approval, discovery, requests, accept/decline, chat, block, report, and account deletion.
 - Confirm that private profile photos and verification documents cannot be opened by another user without permission.
 - Remove all email accounts and fixed OTPs.
-- Publish a Privacy Policy and Terms. Obtain appropriate consent and handle selfie data carefully; check Data Protection Commission requirements before launch.
+- Publish a Privacy Policy and Terms. Obtain appropriate consent and handle government-issued ID images carefully; check Data Protection Commission requirements before launch.
 - Monitor Supabase usage and free-plan quotas. Free projects may pause after inactivity and quotas can change; see https://supabase.com/docs/guides/platform/billing-on-supabase.
 
 ## Troubleshooting
@@ -297,3 +297,8 @@ Use two separate approved accounts that have an active match:
 - **No incoming call:** keep both Akoma tabs open, verify the `calls` table is in the `supabase_realtime` publication and check the recipient is signed in.
 - **No microphone/camera:** open the app over HTTPS, grant browser permissions and check that another app is not holding the camera.
 - **Connection fails:** verify `LIVEKIT_URL` begins with `wss://`, API key and secret belong to the same LiveKit project, and the LiveKit project is operational.
+
+
+## Progressive verification update (new)
+
+After deploying the updated website, open Supabase Dashboard → SQL Editor and run `supabase/verification_progressive_migration.sql`. This keeps the existing private `verification` bucket and profile policies, and adds a database-side safeguard so an admin cannot approve an account until a government-issued ID has been uploaded. New accounts submit an ID only; old `selfie_path` data is retained for compatibility. Pending users see a restricted welcome/verification hub and cannot access real member profiles or member interactions until approved.

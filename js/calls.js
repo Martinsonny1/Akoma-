@@ -1,6 +1,11 @@
 // Akoma one-to-one LiveKit calling.
 // UI events are installed once at module load; signalling subscriptions are managed separately.
-import { Room, RoomEvent, Track } from 'https://cdn.jsdelivr.net/npm/livekit-client@2.15.6/+esm';
+// Load LiveKit asynchronously so a CDN/network failure cannot disable call-button events.
+  let LiveKit = null;
+  let liveKitLoadError = null;
+  const liveKitReady = import('https://cdn.jsdelivr.net/npm/livekit-client@2.15.6/+esm')
+    .then(mod => { LiveKit = mod; return mod; })
+    .catch(err => { liveKitLoadError = err; console.error('Akoma LiveKit SDK failed to load:', err); return null; });
 (() => {
   'use strict';
   const API = () => window.API_SB;
@@ -22,10 +27,6 @@ import { Room, RoomEvent, Track } from 'https://cdn.jsdelivr.net/npm/livekit-cli
     n.innerHTML = html;
     return n;
   };
-  const svg = d => `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
-  const ICON_FS = svg('<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>');
-  const ICON_EXIT = svg('<path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/>');
-  const ICON_MAX = svg('<path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/>');
   const escapeHtml = s => String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
   function ensureLayer() {
@@ -40,7 +41,7 @@ import { Room, RoomEvent, Track } from 'https://cdn.jsdelivr.net/npm/livekit-cli
   function setBusy(busy, label) {
     const layer = ensureLayer();
     layer.querySelectorAll('[data-call-ui]').forEach(b => {
-      if (['hide','fullscreen','maximise'].includes(b.dataset.callUi)) return;
+      if (['hide'].includes(b.dataset.callUi)) return;
       b.disabled = !!busy;
       b.setAttribute('aria-busy', busy ? 'true' : 'false');
     });
@@ -52,43 +53,27 @@ import { Room, RoomEvent, Track } from 'https://cdn.jsdelivr.net/npm/livekit-cli
     const isVideo = call.call_type === 'video';
     const name = call.peer_name || 'Akoma match';
     const connected = !!room;
-    const immersive = layer.classList.contains('immersive');
     const incoming = !!call.incoming;
     const outgoing = !incoming && state === 'Calling…';
-    layer.innerHTML = `<section class="ak-call-card ${isVideo ? 'is-video' : ''}${isVideo && connected ? ' is-connected' : ''}" role="dialog" aria-modal="true" aria-label="${isVideo ? 'Video' : 'Voice'} call">
+    layer.innerHTML = `<section class="ak-call-card ${isVideo ? 'is-video' : ''}" role="dialog" aria-modal="true" aria-label="${isVideo ? 'Video' : 'Voice'} call">
       <div class="ak-call-top"><span class="ak-call-brand">AKOMA</span><button type="button" class="ak-call-min" data-call-ui="hide" aria-label="Minimise call">⌄</button></div>
       <div class="ak-remote-video" id="ak-remote-video"></div><div class="ak-self-video" id="ak-self-video"></div>
       <div class="ak-call-avatar">${isVideo ? '▣' : '♡'}</div><h2>${escapeHtml(name)}</h2>
       <p class="ak-call-status" aria-live="polite">${escapeHtml(state)}</p><div class="ak-call-clock" id="ak-call-clock"></div>
       <div class="ak-call-actions">
-        ${incoming ? `<button type="button" class="ak-call-answer" data-call-ui="accept">Answer</button><button type="button" class="ak-call-decline" data-call-ui="decline">Decline</button>` : ''}
+        ${incoming ? `<button type="button" class="ak-call-answer" data-call-ui="accept">Answer</button><button type="button" class="ak-call-decline" data-call-ui="decline">Decline</button><button type="button" class="ak-call-control" data-call-ui="block">Block caller</button>` : ''}
         ${outgoing ? `<button type="button" class="ak-call-decline" data-call-ui="hangup">Cancel call</button>` : ''}
         ${connected ? `<button type="button" data-call-ui="mute" class="ak-call-control">${muted ? 'Unmute' : 'Mute'}</button>` : ''}
         ${connected && isVideo ? `<button type="button" data-call-ui="camera" class="ak-call-control">${cameraOff ? 'Camera on' : 'Camera off'}</button>` : ''}
         ${connected ? `<button type="button" data-call-ui="speaker" class="ak-call-control ${speakerOn ? 'selected' : ''}">${speakerOn ? 'Speaker on' : 'Speaker off'}</button><button type="button" class="ak-call-decline" data-call-ui="hangup">End call</button>` : ''}
       </div><p class="ak-call-disclaimer">Calls are not recorded. Use block/report if you feel unsafe.</p>
-      ${isVideo ? `<button type="button" class="ak-call-fs" data-call-ui="fullscreen" aria-pressed="${immersive}" aria-label="${immersive ? 'Exit fullscreen' : 'Fullscreen'}">${immersive ? ICON_EXIT : ICON_FS}</button>` : ''}
-      <button type="button" class="ak-call-max" data-call-ui="maximise" aria-label="Maximise call">${ICON_MAX}</button>
     </section>`;
     layer.classList.add('visible');
+    layer.classList.remove('minimised');
   }
   function closeLayer() {
     const layer = document.getElementById('ak-call-layer');
-    if (layer) { layer.classList.remove('visible', 'minimised', 'immersive'); layer.innerHTML = ''; }
-    if (document.fullscreenElement) { try { document.exitFullscreen(); } catch (_) {} }
-  }
-  async function setImmersive(on) {
-    const layer = document.getElementById('ak-call-layer');
-    if (!layer || !active) return;
-    layer.classList.toggle('immersive', on);
-    layer.classList.remove('minimised');
-    // Native fullscreen where supported (not iOS Safari); the CSS mode above works everywhere.
-    try {
-      if (on && !document.fullscreenElement && layer.requestFullscreen) await layer.requestFullscreen();
-      if (!on && document.fullscreenElement) await document.exitFullscreen();
-    } catch (_) {}
-    const b = layer.querySelector('.ak-call-fs');
-    if (b) { b.innerHTML = on ? ICON_EXIT : ICON_FS; b.setAttribute('aria-pressed', String(on)); b.setAttribute('aria-label', on ? 'Exit fullscreen' : 'Fullscreen'); }
+    if (layer) { layer.classList.remove('visible', 'minimised'); layer.innerHTML = ''; }
   }
   function clockStart() {
     startedAt = Date.now(); clearInterval(timer);
@@ -102,8 +87,11 @@ import { Room, RoomEvent, Track } from 'https://cdn.jsdelivr.net/npm/livekit-cli
     document.querySelectorAll('#ak-call-layer audio').forEach(a => { a.muted = !speakerOn; });
   }
   async function connect(tokenData, call) {
+    const sdk = await liveKitReady;
+    if (!sdk) throw new Error('The calling library could not load. Check your internet connection or CDN access, then reload Akoma.');
     if (!tokenData?.token || !tokenData?.server_url) throw new Error('The calling server did not return a valid LiveKit connection token.');
     if (room) { try { await room.disconnect(); } catch (_) {} }
+    const { Room, RoomEvent, Track } = sdk;
     room = new Room({ adaptiveStream: true, dynacast: true });
     room.on(RoomEvent.TrackSubscribed, (track) => {
       if (track.kind === Track.Kind.Video) {
@@ -122,22 +110,14 @@ import { Room, RoomEvent, Track } from 'https://cdn.jsdelivr.net/npm/livekit-cli
     room.on(RoomEvent.Reconnected, () => setStatus('Connected'));
     setStatus('Connecting…');
     await room.connect(tokenData.server_url, tokenData.token, { autoSubscribe: true });
-    muted = false; cameraOff = false; speakerOn = true;
-    // Render the connected UI first: paint() rebuilds the DOM and would wipe any video attached earlier.
-    paint(call, 'Connected');
     await room.localParticipant.setMicrophoneEnabled(true);
     if (call.call_type === 'video') {
       await room.localParticipant.setCameraEnabled(true);
       const pub = room.localParticipant.getTrackPublication(Track.Source.Camera);
       if (pub?.track) { const node = pub.track.attach(); const box = document.getElementById('ak-self-video'); if (box) box.appendChild(node); }
-      // Re-attach any remote video that arrived before the UI was repainted.
-      room.remoteParticipants.forEach(part => part.trackPublications.forEach(pub => {
-        if (pub.track && pub.track.kind === Track.Kind.Video) {
-          const target = document.getElementById('ak-remote-video');
-          if (target) { target.innerHTML = ''; target.appendChild(pub.track.attach()); }
-        }
-      }));
     }
+    muted = false; cameraOff = false; speakerOn = true;
+    paint(call, 'Connected');
     applySpeakerState();
     clockStart();
   }
@@ -188,6 +168,20 @@ import { Room, RoomEvent, Track } from 'https://cdn.jsdelivr.net/npm/livekit-cli
           actions.prepend(b);
         }
       }
+    } finally { handlingAction = false; }
+  }
+  async function blockCaller() {
+    if (!active || !active.incoming || handlingAction) return;
+    const callerId = active.caller_id;
+    if (!callerId || !API()?.report) { setStatus('Unable to block this caller right now.'); return; }
+    if (!confirm('Block this caller and report the call? They will no longer be able to contact you.')) return;
+    handlingAction = true; setBusy(true, 'Blocking caller…');
+    try {
+      await API().report({ target: callerId, reason: 'Harassment', details: 'Blocked from the incoming call screen.', block: true });
+      await finishLocal();
+      alert('Caller blocked.');
+    } catch (e) {
+      setBusy(false); setStatus('Could not block caller: ' + (e.message || 'Please try again.'));
     } finally { handlingAction = false; }
   }
   async function declineCall() {
@@ -254,9 +248,8 @@ import { Room, RoomEvent, Track } from 'https://cdn.jsdelivr.net/npm/livekit-cli
     try {
       if (action === 'accept') return await acceptCall();
       if (action === 'decline') return await declineCall();
+      if (action === 'block') return await blockCaller();
       if (action === 'hangup') return await hangup();
-      if (action === 'fullscreen') { const layer = document.getElementById('ak-call-layer'); await setImmersive(!layer?.classList.contains('immersive')); return; }
-      if (action === 'maximise') { document.getElementById('ak-call-layer')?.classList.remove('minimised'); return; }
       if (action === 'hide') { document.getElementById('ak-call-layer')?.classList.toggle('minimised'); return; }
       if (action === 'mute' && room) {
         muted = !muted; await room.localParticipant.setMicrophoneEnabled(!muted);
@@ -274,11 +267,6 @@ import { Room, RoomEvent, Track } from 'https://cdn.jsdelivr.net/npm/livekit-cli
       console.error('Akoma call control failed:', err);
       setStatus(err?.message || 'That call control could not be applied.');
     }
-  });
-
-  document.addEventListener('fullscreenchange', () => {
-    const layer = document.getElementById('ak-call-layer');
-    if (!document.fullscreenElement && layer?.classList.contains('immersive')) setImmersive(false);
   });
 
   function installSubscription() {
