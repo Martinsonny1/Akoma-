@@ -36,7 +36,7 @@ Akoma's member experience is free: no subscriptions, premium tiers, paid boosts,
 - The live Supabase integration must be tested against your own project; packaging does not verify your database configuration.
 - Protect all admin operations with database-side role checks and Row Level Security. Never rely on hiding admin buttons in JavaScript.
 - Akoma handles sensitive profile photos and identity documents. Complete a privacy policy, terms, retention/deletion procedure and Data Protection Commission obligations before onboarding real members.
-- Manual verification requires a trusted moderation team. Restrict access to Ghana Card images and delete them when no longer needed.
+- Manual verification requires a trusted moderation team. Restrict access to selfie images and delete them when no longer needed. Ghana Card verification has been removed; run `supabase/remove_ghana_card_migration.sql` on existing projects.
 - HTTPS is required for service workers, camera access and installable PWA behaviour.
 
 

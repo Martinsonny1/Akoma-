@@ -134,7 +134,7 @@ If you already use Vercel for another project, create a separate project for Ako
 - Test with at least two separate accounts and devices: profile creation, admin approval, discovery, requests, accept/decline, chat, block, report, and account deletion.
 - Confirm that private profile photos and verification documents cannot be opened by another user without permission.
 - Remove all email accounts and fixed OTPs.
-- Publish a Privacy Policy and Terms. Obtain appropriate consent and handle Ghana Card/selfie data carefully; check Data Protection Commission requirements before launch.
+- Publish a Privacy Policy and Terms. Obtain appropriate consent and handle selfie data carefully; check Data Protection Commission requirements before launch.
 - Monitor Supabase usage and free-plan quotas. Free projects may pause after inactivity and quotas can change; see https://supabase.com/docs/guides/platform/billing-on-supabase.
 
 ## Troubleshooting
