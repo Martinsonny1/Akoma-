@@ -181,7 +181,13 @@
               <div class="ak-tile-shade"></div>
               <div class="ak-tile-top">${p.subscribed ? '<span class="ak-tile-pill premium">★ PREMIUM</span>' : ''}${isNew ? '<span class="ak-tile-pill fresh">✦ NEW</span>' : ''}${p.looking_tonight ? '<span class="ak-tile-pill tonight">LOOKING TONIGHT</span>' : ''}</div>
               ${p.featured ? '<span class="ak-tile-featured">✦ FEATURED</span>' : ''}
-              <div class="ak-tile-caption"><div class="ak-tile-name">${esc(p.name)}, ${p.age}${p.status === 'approved' ? '<span class="ak-verified" aria-label="Verified">✓</span>' : ''}</div><div class="ak-tile-location"><span aria-hidden="true">📍</span> ${esc(p.city || 'Ghana')}${p.distance_band ? ' · '+esc(p.distance_band) : ''}</div></div>
+              <div class="ak-tile-caption">
+                ${p.activity_label ? `<div class="ak-tile-presence ${p.activity_label === 'Online now' ? 'is-online' : 'is-away'}"><span class="ak-presence-dot"></span>${esc(p.activity_label)}</div>` : ''}
+                <div class="ak-tile-name">${esc(p.name)}, ${p.age}${p.status === 'approved' ? '<span class="ak-verified" aria-label="Verified">✓</span>' : ''}</div>
+                ${(p.interests || []).length ? `<div class="ak-tile-interests" aria-label="Interests">${p.interests.slice(0,3).map(i => `<span class="ak-interest-chip">${esc(i)}</span>`).join('')}${p.interests.length > 3 ? `<span class="ak-interest-more">+${p.interests.length - 3}</span>` : ''}</div>` : ''}
+                ${p.looking_for ? `<div class="ak-tile-looking"><span class="ak-tile-meta-label">Looking for</span>${esc(p.looking_for)}</div>` : ''}
+                <div class="ak-tile-location"><span aria-hidden="true">📍</span> ${esc(p.city || 'Ghana')}${p.distance_band ? ' · '+esc(p.distance_band) : ''}</div>
+              </div>
             </div>
           </button>`;
         }).join('')}</div></div>`;

@@ -371,3 +371,17 @@ input[type=text],input[type=tel],input[type=number],select.full{font-size:16px;m
 .ak-tile-location{margin-top:4px;font-size:12px;color:rgba(255,255,255,.9);text-shadow:0 1px 5px rgba(0,0,0,.55);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
 .pcell.ak-profile-tile:active{transform:scale(.985);}
 @media(max-width:360px){.discover-grid-wrap{padding-left:9px;padding-right:9px}.pgrid{gap:9px}.pcell.ak-profile-tile{min-height:220px;border-radius:18px}.ak-tile-caption{left:9px;bottom:9px}}
+
+/* Discover cards: presence, interests and intent metadata. */
+.ak-tile-caption{bottom:10px;left:10px;right:10px;display:flex;flex-direction:column;align-items:flex-start;gap:4px;}
+.ak-tile-presence{display:inline-flex;align-items:center;gap:5px;padding:3px 7px;border-radius:999px;background:rgba(0,0,0,.48);color:#fff;font-size:10px;font-weight:750;line-height:1.2;text-shadow:none;margin-bottom:2px;}
+.ak-presence-dot{width:7px;height:7px;border-radius:50%;background:#a6a6a6;box-shadow:0 0 0 2px rgba(255,255,255,.15);flex:none;}
+.ak-tile-presence.is-online .ak-presence-dot{background:#35df83;box-shadow:0 0 0 2px rgba(53,223,131,.2);}
+.ak-tile-presence.is-away .ak-presence-dot{background:#b9c0c5;}
+.ak-tile-interests{display:flex;flex-wrap:wrap;gap:4px;max-width:100%;}
+.ak-interest-chip,.ak-interest-more{display:inline-flex;align-items:center;max-width:100%;padding:3px 7px;border-radius:999px;background:rgba(255,255,255,.2);border:1px solid rgba(255,255,255,.22);color:#fff;font-size:9px;font-weight:650;line-height:1.15;backdrop-filter:blur(5px);}
+.ak-interest-more{background:rgba(0,0,0,.35);}
+.ak-tile-looking{display:flex;flex-direction:column;gap:1px;color:#fff;font-size:11px;font-weight:650;line-height:1.2;text-shadow:0 1px 5px rgba(0,0,0,.7);}
+.ak-tile-meta-label{font-size:9px;text-transform:uppercase;letter-spacing:.06em;font-weight:800;color:rgba(255,255,255,.72);}
+.ak-tile-location{margin-top:1px;}
+@media(max-width:360px){.ak-tile-interests{gap:3px}.ak-interest-chip,.ak-interest-more{font-size:8px;padding:3px 5px}.ak-tile-looking{font-size:10px}}
