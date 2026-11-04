@@ -100,10 +100,7 @@
       return `${bar('Verify it is you')}<div class="pad"><p class="muted">A selfie is checked against your photos. It keeps fake profiles out and is never shown to members.</p>
       <div class="camera${o.selfie ? ' ok' : ''}" style="${o.selfie ? `background:url(${o.selfie.preview}) center/cover;color:#fff` : ''}">${o.selfie ? '' : `<div>${ic.cam}Face the camera in good light</div>`}</div>
       <div class="row" style="justify-content:center">${fileLabel('selfie', o.selfie ? 'Retake selfie' : 'Take selfie', 'capture="user"')}</div>
-      ${man ? `<div class="card stack"><b>Ghana Card</b><p class="muted small">Men also confirm identity with a photo of their Ghana Card. Our team reviews it by hand and it is stored privately.</p>
-        ${o.card ? `<img src="${o.card.preview}" alt="Ghana Card photo" style="border-radius:12px;max-height:140px;object-fit:cover">` : ''}
-        ${fileLabel('idcard', o.card ? 'Replace photo' : 'Add Ghana Card photo', 'capture="environment"')}</div>` : ''}
-      <button class="btn primary" data-go="terms" ${o.selfie && (!man || o.card) ? '' : 'disabled'}>Continue</button></div>`;
+      <button class="btn primary" data-go="terms" ${o.selfie ? '' : 'disabled'}>Continue</button></div>`;
     },
 
     terms: () => `${bar('Community rules')}<div class="pad"><div class="card stack">
@@ -144,8 +141,7 @@
         <div class="steps">
           <div class="step done"><i>${ic.check}</i><div><b>Email account confirmed</b><p class="muted small">${esc((API.session() || {}).email || '')}</p></div></div>
           <div class="step ${done(m.selfie_path)}"><i>${m.selfie_path ? ic.check : '2'}</i><div><b>Selfie received</b><p class="muted small">Checked against your photos</p></div></div>
-          ${m.role === 'man' ? `<div class="step ${done(m.id_card_path)}"><i>${m.id_card_path ? ic.check : '3'}</i><div><b>Ghana Card received</b><p class="muted small">Name and face matched by our team</p></div></div>` : ''}
-          <div class="step wait"><i>${m.role === 'man' ? '4' : '3'}</i><div><b>Manual approval</b><p class="muted small">A moderator reviews your profile and photos.</p></div></div></div>
+          <div class="step wait"><i>3</i><div><b>Manual approval</b><p class="muted small">A moderator reviews your profile and photos.</p></div></div></div>
         <button class="btn primary" data-act="refresh">Check my status</button>
         ${DEMO ? '<button class="btn gold" data-act="demoapprove">Approve me (demo only)</button>' : ''}
         <button class="btn ghost" data-act="signout">Sign out</button></div>`;
@@ -329,7 +325,7 @@
       <button class="btn primary" data-act="tabto" data-id="discover">Back to Discover</button></div>`,
 
     help: () => `${bar('Help and contact')}<div class="pad"><div>
-      <details><summary>How does verification work?</summary><p>We match a selfie to your photos. Men also confirm a Ghana Card. A person approves every profile.</p></details>
+      <details><summary>How does verification work?</summary><p>We match a selfie to your photos. A person approves every profile.</p></details>
       <details><summary>Can men message me first?</summary><p>Verified men can send a free message request. It arrives as a request. You choose whether to open a chat, and he cannot send another initial request unless you reply.</p></details>
       <details><summary>Someone asked me for money</summary><p>Do not send anything. Tap the flag in the chat to report them. We remove scammers quickly.</p></details>
       <details><summary>Who can see my photos?</summary><p>Everyone can see them unless you hide your profile photo in Settings. Then only people you have matched with can.</p></details>
@@ -643,7 +639,6 @@
           if (!d.profile) { const ex = await API.me(); if (!ex) await API.createProfile({ role: o.role, name: o.name, age: o.age, city: o.city, bio: o.bio, interests: o.interests, looking_for: o.looking }); d.profile = true; }
           while (d.photos < o.photos.length) { await API.addPhoto(o.photos[d.photos].blob); d.photos++; }
           if (o.selfie && !d.selfie) { await API.uploadVerification('selfie', o.selfie.blob); d.selfie = true; }
-          if (o.card && !d.card) { await API.uploadVerification('card', o.card.blob); d.card = true; }
           S.me = await API.me(); await go('status', { reset: true });
         });
       }
@@ -786,7 +781,6 @@
     const t = e.target, files = Array.from(t.files || []); if (!files.length) return;
     try {
       if (t.id === 'selfie') { const blob = await shrink(files[0], 'verify'); S.onb.selfie = { blob, preview: await U.blobToDataURL(blob) }; render(); }
-      else if (t.id === 'idcard') { const blob = await shrink(files[0], 'verify'); S.onb.card = { blob, preview: await U.blobToDataURL(blob) }; render(); }
       else if (t.id === 'slotfile') { for (const f of files.slice(0, 6 - S.onb.photos.length)) { const blob = await shrink(f); S.onb.photos.push({ blob, preview: await U.blobToDataURL(blob) }); } render(); }
       else if (t.id === 'pimg') { S.draft.text = ($('#ptxt') || {}).value || S.draft.text; S.draft.blob = await shrink(files[0]); S.draft.preview = await U.blobToDataURL(S.draft.blob); S.draft.err = ''; render(); }
       else if (t.id === 'editphoto') { await guard(async () => { for (const f of files.slice(0, 6 - S.me.photos.length)) await API.addPhoto(await shrink(f)); S.me = await API.me(); }); }
