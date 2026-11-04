@@ -348,3 +348,11 @@ input[type=text],input[type=tel],input[type=number],select.full{font-size:16px;m
 #ak-call-layer button:focus-visible { outline: 3px solid #f0cf7b; outline-offset: 3px; }
 #ak-call-layer.minimised { pointer-events: none; }
 #ak-call-layer.minimised .ak-call-card { pointer-events: auto; }
+
+
+/* Call UI fix: the video layers must never intercept taps, and controls always sit above them. */
+#ak-call-layer .ak-remote-video, #ak-call-layer .ak-self-video { pointer-events: none; }
+#ak-call-layer .ak-call-card:not(.is-video) .ak-remote-video,
+#ak-call-layer .ak-call-card:not(.is-video) .ak-self-video { display: none; }
+#ak-call-layer .ak-call-top, #ak-call-layer .ak-call-actions, #ak-call-layer .ak-call-disclaimer { z-index: 3; }
+#ak-call-layer .ak-call-actions { position: relative; }
