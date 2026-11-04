@@ -38,7 +38,7 @@
   const freshOnb = () => ({ role: null, name: '', age: '', city: 'Accra', bio: '', interests: [], looking: 'Dating', photos: [], selfie: null, card: null, agreed: false, done: { profile: false, photos: 0, selfie: false, card: false } });
   const S = {
     screen: 'boot', hist: [], me: null, sub: null, plans: [], profiles: [], feed: [], reqs: { incoming: [], outgoing: [] },
-    matches: [], msgs: [], chat: null, allowIncomingCalls: true, vault: [], ephemeral: null, recording: false, recorder: null, recordChunks: [], card: null, gal: 0, dview: 'cards', f: { min: 18, max: 99, radius: 0 },
+    matches: [], msgs: [], chat: null, allowIncomingCalls: true, vault: [], ephemeral: null, staged: [], mediaPrivacy: 'normal', rec: { state: 'idle' }, sending: false, recording: false, recorder: null, recordChunks: [], card: null, gal: 0, dview: 'cards', f: { min: 18, max: 99, radius: 0 },
     email: '', password: '', authMode: 'signup', step: 'email', busy: false, loading: false, onb: freshOnb(),
     draft: { text: '', blob: null, preview: null, err: '' },
     cmp: { to: null, text: '', err: '', today: 0 }, rep: { target: null, reason: REASONS[0], block: true, details: '' },
@@ -257,8 +257,8 @@
       const c = S.chat; if (!c) return loadingBox();
       return `<div class="chat">${bar(esc(c.other.name), { right: `<button class="icon-btn call-head-btn" data-ak-call="audio" aria-label="Voice call" title="Voice call">☎</button><button class="icon-btn call-head-btn" data-ak-call="video" aria-label="Video call" title="Video call">▣</button><button class="icon-btn" data-act="reportopen" data-id="${c.other.id}" aria-label="Block or report">${ic.flag}</button>` })}
         <div class="msgs" id="msgs"></div>
-        <div class="media-options"><select id="media-mode" aria-label="Media privacy"><option value="normal">Keep in chat</option><option value="view_once">Close to destroy (view once)</option><option value="timed:10">10 seconds</option><option value="timed:30">30 seconds</option><option value="timed:60">1 minute</option><option value="timed:3600">1 hour</option><option value="timed:86400">24 hours</option><option value="timed:604800">7 days</option></select><span class="muted tiny">Media privacy</span></div>
-        <div class="composer"><label class="icon-btn attach" aria-label="Attach photo or video">＋<input id="chatfile" type="file" multiple accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime"></label><label class="icon-btn attach" aria-label="Take a photo">${ic.cam}<input id="chatcamera" type="file" accept="image/*" capture="environment"></label><button class="icon-btn voice-btn" data-act="voice" aria-label="Record voice note">${S.recording ? '■' : '🎙'}</button><input id="msg" type="text" maxlength="1000" placeholder="Write a message" autocomplete="off"><button class="icon-btn" style="background:var(--brand);color:var(--on-brand);border:0" data-act="send" aria-label="Send">${ic.send}</button></div><p class="media-note">Only chat matches can send media. Photos up to 8 MB · Videos up to 20 MB · Voice notes up to 2 minutes.</p></div>`;
+        <div id="stage" class="stage" hidden></div>
+        <div class="composer"><label class="icon-btn attach" aria-label="Attach photo or video">＋<input id="chatfile" type="file" multiple accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime"></label><label class="icon-btn attach" aria-label="Take a photo">${ic.cam}<input id="chatcamera" type="file" accept="image/*" capture="environment"></label><button type="button" class="icon-btn voice-btn" id="voicebtn" data-act="voice" aria-label="Record voice note">🎙</button><div class="msgbox"><input id="msg" type="text" maxlength="1000" placeholder="Write a message" autocomplete="off"><span class="privacy-wrap"><button type="button" class="privacy-btn${S.mediaPrivacy !== 'normal' ? ' on' : ''}" id="privbtn" data-act="privmenu" aria-haspopup="menu" aria-expanded="false" aria-label="Media privacy" title="Media privacy">${privacyIcon()}</button><div class="privacy-menu" id="privmenu" role="menu" hidden>${privacyMenuHTML()}</div></span></div><button class="icon-btn" style="background:var(--brand);color:var(--on-brand);border:0" data-act="send" aria-label="Send">${ic.send}</button></div><p class="media-note">Media is sent only when you press Send. Photos up to 8 MB · Videos up to 20 MB · Voice notes up to 2 minutes.</p></div>`;
     },
 
     vault: () => `${bar('Private Vault')}<div class="pad"><div class="banner">${ic.lock}<span>Your Vault is private. Only matches you explicitly authorize can view a photo, for the time you choose. A recipient may still capture anything displayed.</span></div><label class="btn primary" style="display:inline-flex;align-items:center;gap:8px">＋ Add private photos<input id="vaultfile" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden></label><p class="muted small">JPEG, PNG or WebP · 8 MB maximum per image</p><div class="list">${(S.vault||[]).map(a=>`<div class="card stack"><div class="row" style="gap:12px">${a.preview ? `<img src="${a.preview}" style="width:76px;height:76px;object-fit:cover;border-radius:12px">` : '<div class="vault-blur">🔒</div>'}<div class="grow"><b>${a.owned?'Your private photo':'Shared private photo'}</b><span class="muted small" style="display:block">${a.owned?(a.grant_id&&!a.revoked_at&&new Date(a.expires_at)>new Date()?'Access granted until '+new Date(a.expires_at).toLocaleTimeString():'Locked by default'):'Access expires '+new Date(a.expires_at).toLocaleTimeString()}</span></div></div>${a.owned?`<div class="row wrap"><select id="vault-match-${a.id}" class="grow">${S.matches.map(m=>`<option value="${m.id}">${esc(m.other.name)}</option>`).join('')}</select><select id="vault-duration-${a.id}"><option value="5">5 min</option><option value="15" selected>15 min</option><option value="30">30 min</option><option value="60">1 hour</option><option value="1440">24 hours</option></select><button class="btn sm primary" data-act="vaultgrant" data-id="${a.id}" ${S.matches.length?'':'disabled'}>Grant access</button><button class="btn sm danger" data-act="vaultdelete" data-id="${a.id}">Delete</button></div>${a.grant_id&&!a.revoked_at&&new Date(a.expires_at)>new Date()?`<button class="btn sm ghost" data-act="vaultrevoke" data-id="${a.grant_id}">Revoke current access</button>`:''}`:''}</div>`).join('')||'<div class="card"><b>Your Vault is empty</b><p class="muted small">Add a private photo to get started.</p></div>'}</div></div>`,
@@ -370,7 +370,7 @@
     if (!demobar.hidden) demobar.innerHTML = '<span>Demo mode. Data stays in this browser.</span><button data-act="signout">Switch user</button>';
     $('#screen').scrollTop = S.last === S.screen ? st : 0;
     S.last = S.screen;
-    if (S.screen === 'chat') drawMsgs();
+    if (S.screen === 'chat') { drawMsgs(); drawStage(); drawVoiceBtn(); }
     if (S.toast) {
       const t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role', 'status'); t.textContent = S.toast;
       $('#phone').appendChild(t); S.toast = ''; setTimeout(() => t.remove(), 2800);
@@ -379,6 +379,7 @@
   async function go(screen, o) {
     o = o || {};
     if (S.unwatch && screen !== 'chat') { S.unwatch(); S.unwatch = null; }
+    if (screen !== 'chat') resetComposer();
     if (screen !== 'chat') window.AKOMA_CURRENT_MATCH = null;
     if (o.reset) S.hist = [];
     else if (!o.back && !o.replace && S.screen !== screen && S.screen !== 'boot') S.hist.push(S.screen);
@@ -438,43 +439,142 @@
     let m = S.matches.find((x) => x.id === matchId);
     if (!m) { S.matches = await API.matches(); m = S.matches.find((x) => x.id === matchId); }
     if (!m) { toast('That chat is no longer available'); return render(); }
+    resetComposer();
     S.chat = m; window.AKOMA_CURRENT_MATCH = { id: m.id, name: m.other.name }; S.msgs = []; S.ephemeral=null;
     await go('chat');
     try { S.msgs = await API.messages(matchId); drawMsgs(); } catch (e) { toast(U.friendly(e)); render(); return; }
     if (S.unwatch) S.unwatch();
     S.unwatch = API.watchMessages(matchId, addMsg);
   }
-  async function uploadChatMedia(file, voiceDuration, forcedChoice) {
-    if (!file || !S.chat) return;
-    const kind = file.type.startsWith('image/') ? 'image' : file.type.startsWith('video/') ? 'video' : 'audio';
-    let blob = file;
-    if (kind === 'image') blob = await shrink(file);
-    const choice = forcedChoice || ($('#media-mode') || {}).value || 'normal';
-    const mode = choice.startsWith('timed:') ? 'timed' : choice;
-    const seconds = choice.startsWith('timed:') ? Number(choice.split(':')[1]) : null;
-    toast('Uploading…'); render();
-    try { addMsg(await API.sendMedia(S.chat.id, blob, kind, mode, seconds || null, voiceDuration || null)); toast('Media sent'); }
-    catch (e) { toast(U.friendly(e)); }
-    render();
+  // ---------------------------------------------------------------- chat composer (staged media + voice recorder)
+  const PRIVACY = [['normal', 'Keep in chat', '💬'], ['view_once', 'Close to destroy (view once)', '①'], ['timed:10', '10 seconds', '⏱'], ['timed:30', '30 seconds', '⏱'], ['timed:60', '1 minute', '⏱'], ['timed:3600', '1 hour', '⏱'], ['timed:86400', '24 hours', '⏱'], ['timed:604800', '7 days', '⏱']];
+  const privacyOpt = () => PRIVACY.find((o) => o[0] === S.mediaPrivacy) || PRIVACY[0];
+  const privacyIcon = () => privacyOpt()[2];
+  const privacyMenuHTML = () => '<p class="priv-title">Media privacy</p>' + PRIVACY.map((o) => `<button type="button" role="menuitemradio" aria-checked="${S.mediaPrivacy === o[0]}" data-act="privset" data-id="${o[0]}"><span>${o[1]}</span><b>${S.mediaPrivacy === o[0] ? '✓' : ''}</b></button>`).join('');
+  const REC_MAX = 120;
+  let stageSeq = 0;
+  const fmtClock = (s) => Math.floor(s / 60) + ':' + String(s % 60).padStart(2, '0');
+  function flash(t) {
+    const el = document.createElement('div'); el.className = 'toast'; el.setAttribute('role', 'status'); el.textContent = t;
+    $('#phone').appendChild(el); setTimeout(() => el.remove(), 2800);
   }
-  async function toggleVoiceRecord() {
-    if (S.recording && S.recorder) { S.recorder.stop(); return; }
-    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) { toast('Voice recording is not supported in this browser.'); return; }
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      const recordChoice = ($('#media-mode') || {}).value || 'normal';
-      const recorder = new MediaRecorder(stream); S.recorder = recorder; S.recordChunks = []; S.recording = true; render();
-      recorder.ondataavailable = e => { if (e.data && e.data.size) S.recordChunks.push(e.data); };
-      recorder.onstop = async () => {
-        stream.getTracks().forEach(t => t.stop()); S.recording = false; S.recorder = null; render();
-        const blob = new Blob(S.recordChunks, { type: recorder.mimeType || 'audio/webm' });
-        if (blob.size && S.chat) await uploadChatMedia(new File([blob], 'voice-note.webm', { type: blob.type }), Math.max(1, Math.min(120, Math.round((Date.now() - (S.recordStarted || Date.now())) / 1000))), recordChoice);
-        if (S.recordLimit) clearTimeout(S.recordLimit);
+  function recElapsed() { const r = S.rec; return Math.floor(((r.state === 'recording' ? Date.now() - r.t0 : 0) + (r.acc || 0)) / 1000); }
+  function drawStage() {
+    const box = $('#stage'); if (!box) return;
+    const r = S.rec; let h = '';
+    if (r.state !== 'idle') {
+      const paused = r.state === 'paused';
+      h = `<div class="rec-panel"><button type="button" class="icon-btn rec-del" data-act="recdel" aria-label="Delete recording" title="Delete">🗑</button><span class="rec-dot${paused ? ' paused' : ''}" aria-hidden="true"></span><span class="rec-time" id="rectime">${fmtClock(recElapsed())}</span><span class="rec-bars${paused ? ' paused' : ''}" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i><i></i></span><span class="rec-state">${paused ? 'Paused' : 'Recording…'}</span><button type="button" class="icon-btn rec-pause" data-act="recpause" aria-label="${paused ? 'Resume recording' : 'Pause recording'}" title="${paused ? 'Resume' : 'Pause'}">${paused ? '▶' : '⏸'}</button></div><div class="stage-hint">Press Send to share · ${esc(privacyOpt()[1])}</div>`;
+    } else if (S.staged.length) {
+      h = `<div class="stage-strip">${S.staged.map((x) => `<div class="thumb ${x.kind}">${x.kind === 'image' ? `<img src="${x.url}" alt="Selected photo">` : x.kind === 'video' ? `<video src="${x.url}#t=0.1" muted playsinline preload="metadata"></video><span class="thumb-tag">▶</span>` : `<audio src="${x.url}" controls preload="metadata"></audio>`}<button type="button" class="thumb-x" data-act="unstage" data-id="${x.id}" aria-label="Remove" ${S.sending ? 'disabled' : ''}>×</button></div>`).join('')}</div><div class="stage-hint">${S.sending ? 'Sending…' : 'Press Send to share · ' + esc(privacyOpt()[1])}</div>`;
+    }
+    box.innerHTML = h; box.hidden = !h;
+  }
+  function drawVoiceBtn() { const b = $('#voicebtn'); if (b) b.style.display = S.rec.state === 'idle' ? '' : 'none'; }
+  function drawPrivacy() {
+    const m = $('#privmenu'), b = $('#privbtn');
+    if (m) m.innerHTML = privacyMenuHTML();
+    if (b) { b.innerHTML = privacyIcon(); b.classList.toggle('on', S.mediaPrivacy !== 'normal'); b.title = 'Media privacy: ' + privacyOpt()[1]; }
+    drawStage();
+  }
+  function closePriv() { const m = $('#privmenu'), b = $('#privbtn'); if (m) m.hidden = true; if (b) b.setAttribute('aria-expanded', 'false'); }
+  function resetComposer() {
+    const r = S.rec;
+    if (r && r.state !== 'idle') { clearInterval(r.timer); try { r.recorder.onstop = null; if (r.recorder.state !== 'inactive') r.recorder.stop(); } catch (_) {} try { r.stream.getTracks().forEach((t) => t.stop()); } catch (_) {} }
+    S.rec = { state: 'idle' };
+    (S.staged || []).forEach((x) => { try { URL.revokeObjectURL(x.url); } catch (_) {} });
+    S.staged = []; S.sending = false;
+  }
+  async function stageFiles(files) {
+    for (const f of files) {
+      if (S.staged.length >= 5) { flash('You can attach up to 5 files at a time.'); break; }
+      const kind = f.type.startsWith('image/') ? 'image' : f.type.startsWith('video/') ? 'video' : null;
+      if (!kind) { flash('That file type is not supported.'); continue; }
+      if (kind === 'video' && f.size > 20 * 1024 * 1024) { flash('Videos can be up to 20 MB.'); continue; }
+      let blob = f;
+      if (kind === 'image') { try { blob = await shrink(f); } catch (_) { flash('That photo could not be used.'); continue; } }
+      S.staged.push({ id: ++stageSeq, kind, blob, url: URL.createObjectURL(blob) });
+    }
+    drawStage();
+  }
+  async function startRecording() {
+    if (S.rec.state !== 'idle' || S.sending) return;
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) { flash('Voice recording is not supported in this browser.'); return; }
+    let stream;
+    try { stream = await navigator.mediaDevices.getUserMedia({ audio: true }); }
+    catch (_) { flash('Microphone permission is needed to record a voice note.'); return; }
+    const recorder = new MediaRecorder(stream);
+    const r = S.rec = { state: 'recording', recorder, stream, chunks: [], acc: 0, t0: Date.now(), timer: null };
+    recorder.ondataavailable = (e) => { if (e.data && e.data.size) r.chunks.push(e.data); };
+    recorder.start(250);
+    r.timer = setInterval(() => {
+      if (S.rec !== r) return;
+      const n = $('#rectime'); if (n) n.textContent = fmtClock(recElapsed());
+      if (r.state === 'recording' && recElapsed() >= REC_MAX) { pauseRecording(); flash('2-minute limit reached. Send or delete this voice note.'); }
+    }, 250);
+    drawStage(); drawVoiceBtn();
+  }
+  function pauseRecording() {
+    const r = S.rec; if (r.state !== 'recording') return;
+    try { r.recorder.pause(); } catch (_) {}
+    r.acc += Date.now() - r.t0; r.state = 'paused'; drawStage();
+  }
+  function resumeRecording() {
+    const r = S.rec; if (r.state !== 'paused') return;
+    if (recElapsed() >= REC_MAX) { flash('2-minute limit reached. Send or delete this voice note.'); return; }
+    try { r.recorder.resume(); } catch (_) {}
+    r.t0 = Date.now(); r.state = 'recording'; drawStage();
+  }
+  function deleteRecording() { resetRecOnly(); drawStage(); drawVoiceBtn(); }
+  function resetRecOnly() {
+    const r = S.rec; if (r.state === 'idle') return;
+    clearInterval(r.timer);
+    try { r.recorder.onstop = null; if (r.recorder.state !== 'inactive') r.recorder.stop(); } catch (_) {}
+    try { r.stream.getTracks().forEach((t) => t.stop()); } catch (_) {}
+    S.rec = { state: 'idle' };
+  }
+  // Stop the recorder and move the finished voice note into the staged list.
+  function finishRecording() {
+    const r = S.rec;
+    if (r.state === 'recording') r.acc += Date.now() - r.t0;
+    clearInterval(r.timer);
+    const seconds = Math.max(1, Math.min(REC_MAX, Math.round((r.acc || 0) / 1000)));
+    return new Promise((resolve) => {
+      const done = () => {
+        try { r.stream.getTracks().forEach((t) => t.stop()); } catch (_) {}
+        const blob = new Blob(r.chunks, { type: r.recorder.mimeType || 'audio/webm' });
+        S.rec = { state: 'idle' };
+        if (blob.size) S.staged.push({ id: ++stageSeq, kind: 'audio', blob, seconds, url: URL.createObjectURL(blob) });
+        resolve(!!blob.size);
       };
-      recorder.start(); S.recordStarted = Date.now();
-      S.recordLimit = window.setTimeout(() => { if (S.recorder && S.recorder.state === 'recording') S.recorder.stop(); }, 120000);
-      toast('Recording… tap the microphone again to send.');
-    } catch (e) { S.recording = false; toast('Microphone permission is needed to record a voice note.'); render(); }
+      r.recorder.onstop = done;
+      if (r.recorder.state !== 'inactive') { try { r.recorder.stop(); } catch (_) { done(); } } else done();
+    });
+  }
+  async function sendComposer() {
+    if (S.sending || !S.chat) return;
+    const chat = S.chat;
+    if (S.rec.state !== 'idle') { const ok = await finishRecording(); drawVoiceBtn(); if (!ok) { flash('Nothing was recorded.'); drawStage(); return; } }
+    const el = $('#msg'); const text = ((el && el.value) || '').trim();
+    if (!S.staged.length && !text) return;
+    S.sending = true; drawStage();
+    try {
+      const choice = S.mediaPrivacy;
+      const mode = choice.startsWith('timed:') ? 'timed' : choice;
+      const secs = choice.startsWith('timed:') ? Number(choice.split(':')[1]) : null;
+      for (const it of S.staged.slice()) {
+        const row = await API.sendMedia(chat.id, it.blob, it.kind, mode, secs, it.kind === 'audio' ? it.seconds : null);
+        if (S.chat === chat) addMsg(row);
+        S.staged = S.staged.filter((x) => x.id !== it.id); try { URL.revokeObjectURL(it.url); } catch (_) {}
+        drawStage();
+      }
+      if (text) {
+        const box = $('#msg'); if (box) box.value = '';
+        try { const row = await API.sendMessage(chat.id, text); if (S.chat === chat) addMsg(row); }
+        catch (e) { const b2 = $('#msg'); if (b2) b2.value = text; flash(U.friendly(e)); }
+      }
+    } catch (e) { flash(U.friendly(e)); }
+    finally { S.sending = false; drawStage(); }
   }
   async function openCard(id) {
     S.gal = 0; S.card = openAny(id) || null;
@@ -587,14 +687,16 @@
       case 'vaultdelete': return guard(async()=>{await API.deleteVault(id); S.vault=await API.vaultAssets();toast('Vault photo deleted.');render();});
 
       // chat
-      case 'send': {
-        const el = $('#msg'); const t = (el.value || '').trim(); if (!t) return;
-        el.value = ''; try { addMsg(await API.sendMessage(S.chat.id, t)); } catch (e) { el.value = t; toast(U.friendly(e)); render(); } return;
-      }
+      case 'send': return sendComposer();
       case 'openmedia': return guard(async () => { const url = await API.openMedia(id); const m = S.msgs.find(x => String(x.id) === String(id)); if (m) { m.opened_at = new Date().toISOString(); S.ephemeral={id,url}; drawMsgs(); } });
       case 'closemedia': return guard(async()=>{ await API.closeMedia(id); const m=S.msgs.find(x=>String(x.id)===String(id)); if(m){m.media_path=null;m.media_url=null;m.body='Expired media';m.opened_at=new Date().toISOString();} if(S.ephemeral&&String(S.ephemeral.id)===String(id))S.ephemeral=null; drawMsgs(); toast('Media closed and server copy deleted.'); });
       case 'reportmedia': S.rep = { target: S.chat.other.id, reason: 'Something else', block: false, details: 'I am reporting media message ' + id + ' in this conversation.' }; return go('report');
-      case 'voice': return toggleVoiceRecord();
+      case 'voice': return startRecording();
+      case 'recpause': return S.rec.state === 'paused' ? resumeRecording() : pauseRecording();
+      case 'recdel': return deleteRecording();
+      case 'unstage': { const it = S.staged.find((x) => String(x.id) === String(id)); if (it) { try { URL.revokeObjectURL(it.url); } catch (_) {} S.staged = S.staged.filter((x) => x !== it); drawStage(); } return; }
+      case 'privmenu': { const m = $('#privmenu'), b = $('#privbtn'); if (!m) return; const open = m.hidden; m.hidden = !open; if (b) b.setAttribute('aria-expanded', String(open)); return; }
+      case 'privset': S.mediaPrivacy = id || 'normal'; drawPrivacy(); closePriv(); return;
 
       // timeline
       case 'plike': { const p = S.feed.find((x) => x.id === id); if (!p) return; p.liked = !p.liked; p.likes += p.liked ? 1 : -1; render(); try { await API.togglePostLike(id); } catch (e) { p.liked = !p.liked; p.likes += p.liked ? 1 : -1; render(); } return; }
@@ -664,6 +766,7 @@
 
   // ---------------------------------------------------------------- events
   const phone = $('#phone');
+  document.addEventListener('click', (e) => { const m = $('#privmenu'); if (m && !m.hidden && !e.target.closest('.privacy-wrap')) closePriv(); });
   phone.addEventListener('click', (e) => {
     const t = e.target.closest('[data-tab],[data-go],[data-act]'); if (!t || t.tagName === 'LABEL') return;
     if (t.dataset.tab) return tab(t.dataset.tab);
@@ -687,7 +790,7 @@
       else if (t.id === 'slotfile') { for (const f of files.slice(0, 6 - S.onb.photos.length)) { const blob = await shrink(f); S.onb.photos.push({ blob, preview: await U.blobToDataURL(blob) }); } render(); }
       else if (t.id === 'pimg') { S.draft.text = ($('#ptxt') || {}).value || S.draft.text; S.draft.blob = await shrink(files[0]); S.draft.preview = await U.blobToDataURL(S.draft.blob); S.draft.err = ''; render(); }
       else if (t.id === 'editphoto') { await guard(async () => { for (const f of files.slice(0, 6 - S.me.photos.length)) await API.addPhoto(await shrink(f)); S.me = await API.me(); }); }
-      else if (t.id === 'chatfile' || t.id === 'chatcamera') { for (const f of files.slice(0, 5)) await uploadChatMedia(f); t.value = ''; }
+      else if (t.id === 'chatfile' || t.id === 'chatcamera') { await stageFiles(files); t.value = ''; }
       else if (t.id === 'vaultfile') { await guard(async()=>{ for(const f of files.slice(0,8)) await API.uploadVault(f); S.vault=await API.vaultAssets(); toast('Private photos added to your Vault.'); render(); }); t.value=''; }
     } catch (err) { toast(U.friendly(err)); render(); }
   });
@@ -705,6 +808,14 @@
         document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && API.session()) API.heartbeat().catch(() => {}); });
       } else await go('welcome', { reset: true });
     } catch (e) { $('#screen').innerHTML = `<div class="pad"><div class="banner">${ic.warn}<span>Akoma could not start. ${esc(U.friendly(e))}</span></div><button class="btn primary" onclick="location.reload()">Try again</button></div>`; }
-    if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) navigator.serviceWorker.register('sw.js').catch(() => {});
+    if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
+      // Auto-update: when a new version takes over, reload once so every device (phone or PC) runs the same code.
+      const hadController = !!navigator.serviceWorker.controller; let reloaded = false;
+      navigator.serviceWorker.addEventListener('controllerchange', () => { if (hadController && !reloaded) { reloaded = true; location.reload(); } });
+      navigator.serviceWorker.register('sw.js', { updateViaCache: 'none' }).then((reg) => {
+        reg.update().catch(() => {});
+        document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') reg.update().catch(() => {}); });
+      }).catch(() => {});
+    }
   })();
 })();
