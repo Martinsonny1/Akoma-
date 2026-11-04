@@ -55,7 +55,7 @@ import { Room, RoomEvent, Track } from 'https://cdn.jsdelivr.net/npm/livekit-cli
     const immersive = layer.classList.contains('immersive');
     const incoming = !!call.incoming;
     const outgoing = !incoming && state === 'Calling…';
-    layer.innerHTML = `<section class="ak-call-card ${isVideo ? 'is-video' : ''}" role="dialog" aria-modal="true" aria-label="${isVideo ? 'Video' : 'Voice'} call">
+    layer.innerHTML = `<section class="ak-call-card ${isVideo ? 'is-video' : ''}${isVideo && connected ? ' is-connected' : ''}" role="dialog" aria-modal="true" aria-label="${isVideo ? 'Video' : 'Voice'} call">
       <div class="ak-call-top"><span class="ak-call-brand">AKOMA</span><button type="button" class="ak-call-min" data-call-ui="hide" aria-label="Minimise call">⌄</button></div>
       <div class="ak-remote-video" id="ak-remote-video"></div><div class="ak-self-video" id="ak-self-video"></div>
       <div class="ak-call-avatar">${isVideo ? '▣' : '♡'}</div><h2>${escapeHtml(name)}</h2>
