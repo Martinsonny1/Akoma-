@@ -416,6 +416,7 @@
       else if (m.message_type === 'video') content = m.media_url ? `<video class="chat-video" src="${m.media_url}" controls playsinline preload="metadata"></video>` : '<span>Video sent</span>';
       else if (m.message_type === 'audio') content = m.media_url ? `<audio class="chat-audio" src="${m.media_url}" controls preload="metadata"></audio>${m.duration_seconds ? `<small class="media-timer">${m.duration_seconds}s voice note</small>` : ''}` : '<span>Voice note</span>';
       else content = '<span>Media sent</span>';
+      if (m.media_err) content += `<small class="media-timer" style="display:block;opacity:.85">Could not load: ${esc(m.media_err)}</small>`;
       if (m.media_mode === 'timed' && m.expires_at) content += `<small class="media-timer">Expires ${new Date(m.expires_at).toLocaleString()}</small>`;
       if (!mine && m.message_type && m.message_type !== 'text') content += `<button class="report-media" data-act="reportmedia" data-id="${m.id}">Report this media</button>`;
     }
@@ -443,12 +444,12 @@
     if (S.unwatch) S.unwatch();
     S.unwatch = API.watchMessages(matchId, addMsg);
   }
-  async function uploadChatMedia(file, voiceDuration) {
+  async function uploadChatMedia(file, voiceDuration, forcedChoice) {
     if (!file || !S.chat) return;
     const kind = file.type.startsWith('image/') ? 'image' : file.type.startsWith('video/') ? 'video' : 'audio';
     let blob = file;
     if (kind === 'image') blob = await shrink(file);
-    const choice = ($('#media-mode') || {}).value || 'normal';
+    const choice = forcedChoice || ($('#media-mode') || {}).value || 'normal';
     const mode = choice.startsWith('timed:') ? 'timed' : choice;
     const seconds = choice.startsWith('timed:') ? Number(choice.split(':')[1]) : null;
     toast('Uploading…'); render();
@@ -461,12 +462,13 @@
     if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia || !window.MediaRecorder) { toast('Voice recording is not supported in this browser.'); return; }
     try {
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recordChoice = ($('#media-mode') || {}).value || 'normal';
       const recorder = new MediaRecorder(stream); S.recorder = recorder; S.recordChunks = []; S.recording = true; render();
       recorder.ondataavailable = e => { if (e.data && e.data.size) S.recordChunks.push(e.data); };
       recorder.onstop = async () => {
         stream.getTracks().forEach(t => t.stop()); S.recording = false; S.recorder = null; render();
         const blob = new Blob(S.recordChunks, { type: recorder.mimeType || 'audio/webm' });
-        if (blob.size && S.chat) await uploadChatMedia(new File([blob], 'voice-note.webm', { type: blob.type }), Math.min(120, Math.round((Date.now() - (S.recordStarted || Date.now())) / 1000)));
+        if (blob.size && S.chat) await uploadChatMedia(new File([blob], 'voice-note.webm', { type: blob.type }), Math.max(1, Math.min(120, Math.round((Date.now() - (S.recordStarted || Date.now())) / 1000))), recordChoice);
         if (S.recordLimit) clearTimeout(S.recordLimit);
       };
       recorder.start(); S.recordStarted = Date.now();
