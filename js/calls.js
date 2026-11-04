@@ -102,14 +102,22 @@ import { Room, RoomEvent, Track } from 'https://cdn.jsdelivr.net/npm/livekit-cli
     room.on(RoomEvent.Reconnected, () => setStatus('Connected'));
     setStatus('Connecting…');
     await room.connect(tokenData.server_url, tokenData.token, { autoSubscribe: true });
+    muted = false; cameraOff = false; speakerOn = true;
+    // Render the connected UI first: paint() rebuilds the DOM and would wipe any video attached earlier.
+    paint(call, 'Connected');
     await room.localParticipant.setMicrophoneEnabled(true);
     if (call.call_type === 'video') {
       await room.localParticipant.setCameraEnabled(true);
       const pub = room.localParticipant.getTrackPublication(Track.Source.Camera);
       if (pub?.track) { const node = pub.track.attach(); const box = document.getElementById('ak-self-video'); if (box) box.appendChild(node); }
+      // Re-attach any remote video that arrived before the UI was repainted.
+      room.remoteParticipants.forEach(part => part.trackPublications.forEach(pub => {
+        if (pub.track && pub.track.kind === Track.Kind.Video) {
+          const target = document.getElementById('ak-remote-video');
+          if (target) { target.innerHTML = ''; target.appendChild(pub.track.attach()); }
+        }
+      }));
     }
-    muted = false; cameraOff = false; speakerOn = true;
-    paint(call, 'Connected');
     applySpeakerState();
     clockStart();
   }
