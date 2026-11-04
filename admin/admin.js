@@ -18,7 +18,7 @@
   });
   const DEMO = API.mode === 'demo';
   const TABS = [['overview', 'Overview'], ['queue', 'Verification'], ['reports', 'Reports'], ['posts', 'Posts'], ['users', 'Users'], ['payments', 'Payments'], ['waitlist', 'Waitlist']];
-  const REJECT = ['Photos are unclear', 'Selfie does not match photos', 'Ghana Card could not be read', 'Profile looks fake', 'Age could not be confirmed', 'Other'];
+  const REJECT = ['Photos are unclear', 'Selfie does not match photos', 'Profile looks fake', 'Age could not be confirmed', 'Other'];
   const GOAL = 100;
   const S = { me: null, tab: 'overview', stats: null, data: {}, q: '', busy: false, email: '', toast: '' };
 
@@ -78,9 +78,8 @@
           ${p.bio ? `<p>${esc(p.bio)}</p>` : '<p class="muted">No bio.</p>'}
           <p class="small muted">Interests: ${esc((p.interests || []).join(', ') || 'none')} · Looking for: ${esc(p.looking_for)}</p>
           <div class="imgs"><figure>${dataImg(r.selfie, 'selfie')}<figcaption>Selfie</figcaption></figure>
-            ${man ? `<figure>${dataImg(r.idCard, 'Ghana Card')}<figcaption>Ghana Card</figcaption></figure>` : ''}
             ${(r.photos.length ? r.photos : [null]).map((u, i) => `<figure>${dataImg(u, 'photo')}<figcaption>Profile photo ${i + 1}</figcaption></figure>`).join('')}</div>
-          <p class="small muted">Check: the face in the selfie matches the photos${man ? ', and the name and face on the Ghana Card match the profile' : ''}. Reject anyone who looks under 18.</p>
+          <p class="small muted">Check: the face in the selfie matches the photos. Reject anyone who looks under 18.</p>
           <div class="actions"><button class="btn primary" data-act="approve" data-id="${p.id}">Approve</button>
             <select data-reason="${p.id}" aria-label="Rejection reason">${REJECT.map((x) => `<option>${x}</option>`).join('')}</select>
             <button class="btn danger" data-act="reject" data-id="${p.id}">Reject</button></div></div>`;
