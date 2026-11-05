@@ -67,7 +67,7 @@
     boot: () => loadingBox(),
 
     welcome: () => `<div class="splash"><div class="mark">${ic.heart}</div><div><h1>Akoma</h1></div>
-      <p>Meet someone with energy. Private, verified, on your terms.</p>
+      <p>Meet someone with energy. Browse freely. Verify by selfie when you're ready.</p>
       <div class="stack"><button class="btn primary" data-go="phone">Get started</button>
       ${DEMO ? `<button class="btn ghost" data-act="demo" data-id="woman">Try the demo as Efua (a woman)</button><button class="btn ghost" data-act="demo" data-id="man">Try the demo as Kofi (a man)</button>` : ''}</div>
       <small>For adults aged 18 and over.</small>
@@ -87,7 +87,7 @@
 
     role: () => `${bar('Who are you?')}<div class="pad"><p class="muted">Choose one. This cannot be changed later.</p>
       <button class="opt" data-act="role" data-id="woman"><div class="av" style="--h:330;--s:52px"><span>W</span></div><div><b>I'm a woman</b><span class="muted small">Messages from men arrive as requests. You choose who to chat with.</span></div></button>
-      <button class="opt" data-act="role" data-id="man"><div class="av" style="--h:190;--s:52px"><span>M</span></div><div><b>I'm a man</b><span class="muted small">Verified entry. Send message requests for free.</span></div></button></div>`,
+      <button class="opt" data-act="role" data-id="man"><div class="av" style="--h:190;--s:52px"><span>M</span></div><div><b>I'm a man</b><span class="muted small">Browse first. Verify by selfie to unlock interactions.</span></div></button></div>`,
 
     details: () => `${bar('About you')}<div class="pad">
       <label class="f">First name<input id="nm" type="text" maxlength="40" autocomplete="given-name" value="${esc(S.onb.name)}"></label>
@@ -97,13 +97,14 @@
 
     selfie: () => {
       const o = S.onb;
-      return `${bar('Verify your identity')}<div class="pad"><p class="muted">Upload a clear photo of your government-issued ID (Ghana Card is accepted). Our team checks it privately to confirm your identity and age. It is never shown to other members.</p>
-      <div class="card stack"><b>Government-issued ID</b>
-        ${o.card ? `<img src="${o.card.preview}" alt="Government-issued ID preview" style="border-radius:12px;max-height:180px;object-fit:contain">` : `<div class="camera"><div>${ic.shield}Make sure your name, photo and date of birth are readable</div></div>`}
-        <div class="row" style="justify-content:center">${fileLabel('idcard', o.card ? 'Replace ID photo' : 'Take or upload ID photo', 'capture="environment"')}</div>
+      return `${bar('Selfie verification')}<div class="pad"><p class="muted">A selfie lets our moderators compare your current face with your profile photos. No government ID is required. You can skip this and explore Akoma as a guest.</p>
+      <div class="card stack"><b>Optional live selfie</b>
+        ${o.selfie ? `<img src="${o.selfie.preview}" alt="Selfie preview" style="border-radius:12px;max-height:220px;object-fit:contain">` : `<div class="camera"><div>${ic.cam}Take a clear selfie with your face visible</div></div>`}
+        <div class="row" style="justify-content:center">${fileLabel('selfie', o.selfie ? 'Replace selfie' : 'Take or upload selfie', 'capture="user"')}</div>
       </div>
-      <p class="muted small">Use your own valid ID. Do not upload someone else's document. Your document is stored in private storage and only authorized moderators can review it.</p>
-      <button class="btn primary" data-go="terms" ${o.card ? '' : 'disabled'}>Continue</button></div>`;
+      <p class="muted small">Your selfie is private and reviewed by authorized Akoma moderators. A selfie check is not government identity verification or proof of age; Akoma remains for adults aged 18+.</p>
+      <button class="btn primary" data-go="terms">${o.selfie ? 'Continue with selfie' : 'Continue'}</button>
+      <button class="btn ghost" data-act="skipselife">Skip for now — browse as guest</button></div>`;
     },
 
     terms: () => `${bar('Community rules')}<div class="pad"><div class="card stack">
@@ -135,31 +136,18 @@
       <button class="btn primary" data-act="finish" ${S.busy ? 'disabled' : ''}>${S.busy ? 'Saving your profile…' : 'Finish setup'}</button></div>`,
 
     status: () => {
-      const m = S.me, st = m.status;
-      if (st === 'banned') return `${bar('Account suspended', { noback: true })}<div class="pad"><div class="banner">${ic.warn}<span>This account was removed for breaking the community rules. Contact support if you think this is a mistake.</span></div><button class="btn ghost" data-act="signout">Sign out</button></div>`;
-      const idReceived = !!m.id_card_path;
-      const rejected = st === 'rejected';
-      return `${bar('Your Akoma welcome', { noback: true })}<div class="pad">
+      const m = S.me, pending = m.status === 'pending';
+      if (m.status === 'banned') return `${bar('Account suspended', { noback: true })}<div class="pad"><div class="banner">${ic.warn}<span>This account was removed for breaking the community rules. Contact support if you think this is a mistake.</span></div><button class="btn ghost" data-act="signout">Sign out</button></div>`;
+      return `${bar('Welcome to Akoma', { noback: true, right: meBtn() })}<div class="pad">
         <div class="card stack" style="text-align:center;align-items:center;padding:24px 18px">
           <div class="mark" style="width:54px;height:54px">${ic.heart}</div>
-          <h2 style="margin:0">You're almost there${m.name ? ', ' + esc(m.name) : ''} ❤️</h2>
-          <p class="muted">Your Akoma account is ready. While we review your ID, you can get familiar with how the community works.</p>
-          <span class="badge ${rejected ? 'bad' : 'warn'}">${rejected ? 'Changes needed' : 'Verification pending'}</span>
+          <h2 style="margin:0">${pending ? 'Your selfie is being reviewed' : 'You are browsing as a guest'}${m.name ? ', ' + esc(m.name) : ''} ❤️</h2>
+          <span class="badge ${pending ? 'warn' : 'good'}">${pending ? 'Pending selfie review' : 'Guest account'}</span>
+          <p class="muted">${pending ? 'You can keep exploring Discover and Timeline. Messaging, matching and calls unlock after approval.' : 'Explore profiles and community posts. Verify with a selfie whenever you are ready to unlock the full Akoma experience.'}</p>
         </div>
-        <div class="card stack"><b>Your verification progress</b>
-          <div class="step done"><i>${ic.check}</i><div><b>Account created</b><p class="muted small">${esc((API.session() || {}).email || '')}</p></div></div>
-          <div class="step ${idReceived ? 'done' : 'wait'}"><i>${idReceived ? ic.check : '2'}</i><div><b>Government-issued ID</b><p class="muted small">${idReceived ? 'Received securely. Only authorized moderators can review it.' : 'Upload a clear photo of your Ghana Card or another accepted government ID.'}</p></div></div>
-          <div class="step wait"><i>3</i><div><b>Manual review</b><p class="muted small">Our team checks your ID and profile. We aim to review submissions within 24 hours, although some reviews may take longer.</p></div></div>
-        </div>
-        ${!idReceived || rejected ? `<div class="card stack"><b>${rejected ? 'Resubmit your ID' : 'Complete your verification'}</b>${m.review_note ? `<p class="small muted">Reviewer note: ${esc(m.review_note)}</p>` : ''}<p class="muted small">Take a clear, readable photo with all four corners visible.</p>${fileLabel('pending-id', 'Upload or replace ID photo', 'capture="environment"')}</div>` : ''}
-        <div class="card stack"><b>Explore Akoma while you wait</b><p class="muted small">You can preview what becomes available after approval. Real member profiles and interactions remain protected until verification is complete.</p>
-          <div class="row"><span class="badge">${ic.heart} Discover</span><span class="muted small">Meet verified members</span></div>
-          <div class="row"><span class="badge">${ic.t_chat} Chats</span><span class="muted small">Start meaningful conversations</span></div>
-          <div class="row"><span class="badge">${ic.cam} Calls</span><span class="muted small">Voice and video with matches</span></div>
-          <div class="row"><span class="badge">${ic.lock} The Vault</span><span class="muted small">Share private photos with control</span></div>
-        </div>
-        <button class="btn primary" data-act="refresh">${S.busy ? 'Checking…' : 'Check verification status'}</button>
-        <p class="muted small" style="text-align:center">We'll check for approval automatically while this screen is open. Please don't create another account while you wait.</p>
+        <div class="card stack"><b>Your access</b><div class="row"><span>${ic.heart}</span><span>Browse Discover and Timeline</span><span class="badge good">Available</span></div><div class="row"><span>${ic.t_chat}</span><span>Likes, requests and chats</span><span class="badge warn">After approval</span></div><div class="row"><span>${ic.cam}</span><span>Voice and video calls</span><span class="badge warn">After approval</span></div></div>
+        ${!pending ? `<div class="card stack"><b>Unlock full access</b><p class="muted small">Submit a selfie for private moderator review. No ID document is needed.</p>${fileLabel('pending-selfie', 'Take or upload selfie', 'capture="user"')}</div>` : `<p class="muted small">We'll check for approval automatically while this screen is open.</p>`}
+        <button class="btn primary" data-act="browse">${pending ? 'Continue browsing' : 'Explore Akoma'}</button>
         <button class="btn ghost" data-act="signout">Sign out</button></div>`;
     },
 
@@ -175,10 +163,11 @@
       const featuredIds = new Set(featured.map((p) => p.id));
       const list = eligible.filter((p) => !featuredIds.has(p.id));
       const hero = `<section class="ak-page-hero ak-discover-hero"><div class="ak-page-hero-copy"><span class="ak-hero-kicker">AKOMA · DISCOVER</span><h1>Discover connections.</h1><p>Someone new could change everything.</p></div></section>`;
+      const guestPrompt = S.me && S.me.status !== 'approved' ? `<div class="card stack"><div class="row"><span class="badge warn">${S.me.status === 'pending' ? 'Selfie review pending' : 'Guest account'}</span><span class="muted small">Browse freely</span></div><p class="muted small">${S.me.status === 'pending' ? 'Your selfie is being reviewed. Full access unlocks after approval.' : 'Verify with a selfie to unlock likes, messaging and calls.'}</p>${S.me.status !== 'pending' ? fileLabel('pending-selfie', 'Verify with selfie', 'capture="user"') : ''}</div>` : '';
       const featuredRail = featured.length ? `<section class="ak-featured-section"><div class="ak-section-heading"><div><span class="ak-hero-kicker">HANDPICKED FOR YOU</span><h3>Featured profiles</h3></div><span class="ak-rail-hint">Swipe to explore</span></div><div class="ak-featured-rail">${featured.map((p) => `<button class="ak-featured-card" data-act="open" data-id="${p.id}" aria-label="View featured profile ${esc(p.name)}"><span class="ak-featured-photo">${av(p, 150, true)}</span><span class="ak-featured-caption"><b>${esc(p.name)}, ${p.age}</b><span class="ak-featured-meta">${p.activity_label === 'Online now' ? '<i class="ak-presence-dot is-live"></i> Online' : '✦ Featured'}</span></span></button>`).join('')}</div></section>` : '';
-      if (!list.length) return `${head}${hero}<div class="discover-grid-wrap">${featuredRail}<div class="card stack"><b>No one new right now</b><p class="muted">Widen your filters or check back later. New verified people are added daily.</p><button class="btn sm" data-go="filters">Change filters</button></div></div>`;
+      if (!list.length) return `${head}${hero}<div class="discover-grid-wrap">${guestPrompt}${featuredRail}<div class="card stack"><b>No one new right now</b><p class="muted">Widen your filters or check back later. New verified people are added daily.</p><button class="btn sm" data-go="filters">Change filters</button></div></div>`;
       if (grid) {
-        return `${head}${hero}<div class="discover-grid-wrap">${featuredRail}<div class="ak-section-heading ak-people-heading"><div><span class="ak-hero-kicker">FIND YOUR CONNECTION</span><h3>People you might like</h3></div></div><div class="pgrid">${list.map((p) => {
+        return `${head}${hero}<div class="discover-grid-wrap">${guestPrompt}${featuredRail}<div class="ak-section-heading ak-people-heading"><div><span class="ak-hero-kicker">FIND YOUR CONNECTION</span><h3>People you might like</h3></div></div><div class="pgrid">${list.map((p) => {
           const isNew = p.created_at && (Date.now() - new Date(p.created_at).getTime()) < 7 * 86400000;
           const photo = av(p, 260, true);
           return `<button class="pcell ak-profile-tile" data-act="open" data-id="${p.id}" aria-label="View ${esc(p.name)}, age ${p.age}">
@@ -198,11 +187,10 @@
         }).join('')}</div></div>`;
       }
       const p = list[0];
-      return `${head}<div class="deck"><div class="pcard" data-act="open" data-id="${p.id}"><div class="hero">${av(p, 190, true)}</div>
+      return `${head}${guestPrompt}<div class="deck"><div class="pcard" data-act="open" data-id="${p.id}"><div class="hero">${av(p, 190, true)}</div>
         <div><div class="row wrap" style="gap:8px"><h3>${esc(p.name)}, ${p.age}</h3>${vb()}${p.featured ? '<span class="badge gold">Featured</span>' : ''}</div><p class="muted small">${esc(p.city)}${p.distance_band ? ' · '+esc(p.distance_band)+' away' : ''}${p.activity_label ? ' · '+esc(p.activity_label) : ''}</p></div>
         ${hiddenNote(p)}<p>${esc(p.bio)}</p>${tags(p.interests)}</div>
-        <div class="acts"><button class="round" data-act="pass" data-id="${p.id}" aria-label="Pass">${ic.x}</button><button class="round like" data-act="like" data-id="${p.id}" aria-label="${isW() ? 'Like' : 'Send message request'}">${ic.heart}</button></div>
-        <p class="muted small" style="text-align:center">${isW() ? 'When you like someone, a chat opens. Men can also send free message requests.' : 'Send a free message request. She decides whether to reply.'}</p></div>`;
+        ${S.me && S.me.status === 'approved' ? `<div class="acts"><button class="round" data-act="pass" data-id="${p.id}" aria-label="Pass">${ic.x}</button><button class="round like" data-act="like" data-id="${p.id}" aria-label="${isW() ? 'Like' : 'Send message request'}">${ic.heart}</button></div><p class="muted small" style="text-align:center">${isW() ? 'When you like someone, a chat opens. Men can also send free message requests.' : 'Send a free message request. She decides whether to reply.'}</p>` : '<p class="muted small" style="text-align:center">Verify with a selfie to like, pass and start conversations.</p>'}</div>`;
     },
 
     timeline: () => {
@@ -215,15 +203,16 @@
           <div class="grow"><b>${esc(a.name)}</b> ${vb()}<span class="muted small" style="display:block">${U.timeAgo(p.created_at)}${p.status === 'pending' ? ' · Waiting for review' : ''}</span></div>
           ${p.mine ? '' : `<button class="icon-btn" data-act="reportpost" data-id="${p.id}" data-user="${a.id}" aria-label="Report this post">${ic.flag}</button>`}</div>
           ${p.body ? `<p>${esc(p.body)}</p>` : ''}${img}
-          <div class="row"><button class="chip" aria-pressed="${p.liked}" data-act="plike" data-id="${p.id}">${ic.heart.replace('<svg', '<svg style="width:14px;height:14px;vertical-align:-2px;margin-right:5px"')}${p.likes}</button></div></div>`;
+          <div class="row">${S.me && S.me.status === 'approved' ? `<button class="chip" aria-pressed="${p.liked}" data-act="plike" data-id="${p.id}">${ic.heart.replace('<svg', '<svg style="width:14px;height:14px;vertical-align:-2px;margin-right:5px"')}${p.likes}</button>` : `<span class="chip">${ic.heart} ${p.likes}</span>`}</div></div>`;
       }).join('');
       const timelineHero = `<section class="ak-page-hero ak-timeline-hero"><div class="ak-page-hero-copy"><span class="ak-hero-kicker">AKOMA · COMMUNITY</span><h1>Moments on Akoma.</h1><p>Little moments. Real connections.</p></div></section>`;
       return `${bar('Timeline', { noback: true, right: meBtn() })}${timelineHero}<div class="pad" style="padding-top:8px">
-        <div class="compose"><textarea id="ptxt" maxlength="500" placeholder="Share something with the community">${esc(d.text)}</textarea>
+        ${S.me && S.me.status !== 'approved' ? `<div class="card stack"><span class="badge warn">${S.me.status === 'pending' ? 'Selfie review pending' : 'Guest account'}</span><p class="muted small">You can read community posts. Selfie approval unlocks posting, likes and other interactions.</p>${S.me.status !== 'pending' ? fileLabel('pending-selfie', 'Verify with selfie', 'capture="user"') : ''}</div>` : ''}
+        ${S.me && S.me.status === 'approved' ? `<div class="compose"><textarea id="ptxt" maxlength="500" placeholder="Share something with the community">${esc(d.text)}</textarea>
           ${d.preview ? `<div class="attach"><img src="${d.preview}" alt="Photo to post"><button class="icon-btn" data-act="rmimg" aria-label="Remove photo">${ic.x}</button></div>` : ''}
           ${d.err ? `<p class="err">${esc(d.err)}</p>` : ''}
           <div class="row" style="justify-content:space-between">${fileLabel('pimg', d.preview ? 'Change photo' : 'Add photo')}<button class="btn sm primary" data-act="post" ${S.busy ? 'disabled' : ''}>Post</button></div>
-          <p class="muted small">Photos are checked by a moderator before they appear.</p></div>
+          <p class="muted small">Photos are checked by a moderator before they appear.</p></div>` : ''}
         ${feat.length ? `<div class="stack"><div class="row" style="justify-content:space-between"><h3>Featured</h3><span class="muted small">Swipe to see more</span></div><div class="hscroll">${feat.map((p) => `<button class="fcard" data-act="open" data-id="${p.id}">${av(p, 68)}<b>${esc(p.name)}, ${p.age}</b><span class="badge gold">Featured</span></button>`).join('')}</div></div>` : ''}
         <div class="stack"><h3>Posts</h3>${S.loading && !S.feed.length ? loadingBox() : posts || '<div class="card"><b>No posts yet</b><p class="muted small">Be the first to share something.</p></div>'}</div></div>`;
     },
@@ -232,7 +221,7 @@
       const p = S.card; if (!p) return loadingBox();
       const photos = p.photos || [];
       const main = photos[S.gal] || photos[0];
-      const act = p.is_match ? `<button class="btn primary" data-act="openchat" data-id="${p.id}">Open chat</button><button class="btn ghost" data-act="unmatch" data-id="${p.id}">Unmatch</button>`
+      const act = S.me && S.me.status !== 'approved' ? `<div class="card stack"><span class="badge warn">${S.me.status === 'pending' ? 'Selfie review pending' : 'Guest account'}</span><p class="muted small">Verify with a selfie to interact with members.</p>${S.me.status !== 'pending' ? fileLabel('pending-selfie', 'Verify with selfie', 'capture="user"') : ''}</div>` : p.is_match ? `<button class="btn primary" data-act="openchat" data-id="${p.id}">Open chat</button><button class="btn ghost" data-act="unmatch" data-id="${p.id}">Unmatch</button>`
         : isW() ? `<button class="btn gold" data-act="like" data-id="${p.id}">Like and open chat</button>`
           : p.request_sent ? '<button class="btn" disabled>Request sent. Waiting for her reply</button>'
             : `<button class="btn gold" data-act="like" data-id="${p.id}">Send message request</button>`;
@@ -307,7 +296,7 @@
     },
 
     tips: () => `${bar('Stay safe')}<div class="pad"><div class="banner">${ic.warn}<span>Romance scams are the biggest risk on any dating app. These rules protect you.</span></div><div class="list">
-      ${[['Never send money, airtime or gifts', 'Not for emergencies, school fees, customs fees or investments. Report anyone who asks.'], ['Meet in a public place first', 'Tell a friend where you are going and share your live location.'], ['Keep chatting on Akoma at first', 'Move to WhatsApp only when you feel comfortable.'], ['Check the verified badge', 'A badge means a real face and an ID were checked. It is not a guarantee of character.'], ['Trust your instincts', 'If someone rushes you, pressures you or avoids a call, step back and report.']]
+      ${[['Never send money, airtime or gifts', 'Not for emergencies, school fees, customs fees or investments. Report anyone who asks.'], ['Meet in a public place first', 'Tell a friend where you are going and share your live location.'], ['Keep chatting on Akoma at first', 'Move to WhatsApp only when you feel comfortable.'], ['Check the verified badge', 'A badge means the member completed Akoma selfie review. It is not proof of legal identity or a guarantee of character.'], ['Trust your instincts', 'If someone rushes you, pressures you or avoids a call, step back and report.']]
         .map((t) => `<div class="stack" style="padding:12px 0;gap:4px"><b>${t[0]}</b><p class="muted small">${t[1]}</p></div>`).join('')}</div></div>`,
 
     me: () => {
@@ -377,7 +366,7 @@
       <button class="btn primary" data-act="tabto" data-id="discover">Back to Discover</button></div>`,
 
     help: () => `${bar('Help and contact')}<div class="pad"><div>
-      <details><summary>How does verification work?</summary><p>Everyone submits a government-issued ID, such as a Ghana Card. A moderator reviews it privately before approving the account.</p></details>
+      <details><summary>How does verification work?</summary><p>Guests can browse first. To unlock full access, submit a selfie for private moderator review. Akoma does not require government ID uploads. Selfie review is not proof of legal identity or age.</p></details>
       <details><summary>Can men message me first?</summary><p>Verified men can send a free message request. It arrives as a request. You choose whether to open a chat, and he cannot send another initial request unless you reply.</p></details>
       <details><summary>Someone asked me for money</summary><p>Do not send anything. Tap the flag in the chat to report them. We remove scammers quickly.</p></details>
       <details><summary>Who can see my photos?</summary><p>Everyone can see them unless you hide your profile photo in Settings. Then only people you have matched with can.</p></details>
@@ -406,10 +395,10 @@
   function render() {
     const st = $('#screen').scrollTop;
     $('#screen').innerHTML = SCREENS[S.screen]();
-    const showTabs = S.me && S.me.status === 'approved' && MAIN.includes(S.screen);
+    const showTabs = !!(S.me && (S.me.status === 'approved' ? MAIN.includes(S.screen) : ['guest','pending'].includes(S.me.status) && ['discover','timeline'].includes(S.screen)));
     $('#tabs').hidden = !showTabs;
     if (showTabs) {
-      const tabs = [['discover', 'Discover', 'tdisc'], ['timeline', 'Timeline', 'ttime'], ['likes', isW() ? 'Requests' : 'Sent', 'tlikes'], ['matches', 'Matches', 'tmatch'], ['inbox', 'Chats', 'tchat']];
+      const tabs = S.me.status === 'approved' ? [['discover', 'Discover', 'tdisc'], ['timeline', 'Timeline', 'ttime'], ['likes', isW() ? 'Requests' : 'Sent', 'tlikes'], ['matches', 'Matches', 'tmatch'], ['inbox', 'Chats', 'tchat']] : [['discover', 'Discover', 'tdisc'], ['timeline', 'Timeline', 'ttime']];
       const key = { tdisc: 't_disc', ttime: 't_time', tlikes: 't_likes', tmatch: 't_match', tchat: 't_chat' };
       $('#tabs').innerHTML = tabs.map((t) => `<button data-tab="${t[0]}" ${S.screen === t[0] ? 'aria-current="page"' : ''}>${ic[key[t[2]]]}${t[1]}${t[0] === 'likes' && isW() && S.reqs.incoming.length ? `<span class="dot">${S.reqs.incoming.length}</span>` : ''}</button>`).join('');
     }
@@ -441,13 +430,14 @@
     }
   }
   const tab = (s) => go(s, { reset: true });
-  function back() { const p = S.hist.pop(); go(p || (S.me && S.me.status === 'approved' ? 'discover' : 'welcome'), { back: true }); }
+  function back() { const p = S.hist.pop(); go(p || (S.me ? 'discover' : 'welcome'), { back: true }); }
 
   async function route() {
     S.me = await API.me();
     if (!S.me) { S.onb = freshOnb(); return go('role', { reset: true }); }
     if (S.me.isAdmin) return go('adminhint', { reset: true });
-    if (S.me.status !== 'approved') return go('status', { reset: true });
+    if (S.me.status === 'banned' || S.me.status === 'rejected') return go('status', { reset: true });
+    if (S.me.status === 'guest' || S.me.status === 'pending') { S.f = { min: 18, max: 99 }; return go('discover', { reset: true }); }
     if (S.me.role === 'woman') { try { S.reqs = await API.requests(); } catch (e) { /* badge only */ } }
     S.f = { min: 18, max: 99 };
     return go('discover', { reset: true });
@@ -650,7 +640,9 @@
       case 'signout': if (S.unwatch) { S.unwatch(); S.unwatch = null; } await API.signOut(); S.me = null; S.profiles = []; S.matches = []; S.reqs = { incoming: [], outgoing: [] }; S.step = 'email'; S.email = ''; S.password = ''; return go('welcome', { reset: true });
       case 'demoreset': await API.demoReset(); S.me = null; return go('welcome', { reset: true });
       case 'demoapprove': await API.demoApproveMe(); return route();
-      case 'refresh': S.me = await API.me(); if (S.me && S.me.status === 'approved') return route(); toast('Still waiting for review'); return render();
+      case 'refresh': S.me = await API.me(); if (S.me && S.me.status === 'approved') return route(); toast('Your review is still pending'); return render();
+      case 'skipselife': return go('terms');
+      case 'browse': return go('discover', { reset: true });
 
       case 'authmode':
         S.authMode = id === 'login' ? 'login' : 'signup'; return render();
@@ -695,8 +687,8 @@
           const o = S.onb, d = o.done;
           if (!d.profile) { const ex = await API.me(); if (!ex) await API.createProfile({ role: o.role, name: o.name, age: o.age, dob: o.dob, city: o.city, bio: o.bio, interests: o.interests, looking_for: o.looking }); d.profile = true; }
           while (d.photos < o.photos.length) { await API.addPhoto(o.photos[d.photos].blob); d.photos++; }
-          if (o.card && !d.card) { await API.uploadVerification('card', o.card.blob); d.card = true; }
-          S.me = await API.me(); await go('status', { reset: true });
+          if (o.selfie && !d.selfie) { await API.uploadVerification('selfie', o.selfie.blob); await API.submitSelfieVerification(); d.selfie = true; }
+          S.me = await API.me(); await route();
         });
       }
 
@@ -856,7 +848,7 @@
     try {
       if (t.id === 'selfie') { const blob = await shrink(files[0], 'verify'); S.onb.selfie = { blob, preview: await U.blobToDataURL(blob) }; render(); }
       else if (t.id === 'idcard') { const blob = await shrink(files[0], 'verify'); S.onb.card = { blob, preview: await U.blobToDataURL(blob) }; render(); }
-      else if (t.id === 'pending-id') { await guard(async () => { const blob = await shrink(files[0], 'verify'); await API.uploadVerification('card', blob); S.me = await API.me(); toast('Your ID was submitted securely for review.'); render(); }); t.value = ''; }
+      else if (t.id === 'pending-selfie') { await guard(async () => { const blob = await shrink(files[0], 'verify'); await API.uploadVerification('selfie', blob); await API.submitSelfieVerification(); S.me = await API.me(); toast('Your selfie was submitted for private review.'); await route(); }); t.value = ''; }
       else if (t.id === 'slotfile') { for (const f of files.slice(0, 6 - S.onb.photos.length)) { const blob = await shrink(f); S.onb.photos.push({ blob, preview: await U.blobToDataURL(blob) }); } render(); }
       else if (t.id === 'pimg') { S.draft.text = ($('#ptxt') || {}).value || S.draft.text; S.draft.blob = await shrink(files[0]); S.draft.preview = await U.blobToDataURL(S.draft.blob); S.draft.err = ''; render(); }
       else if (t.id === 'editphoto') { await guard(async () => { for (const f of files.slice(0, 6 - S.me.photos.length)) await API.addPhoto(await shrink(f)); S.me = await API.me(); toast('New photos submitted for moderator review.'); }); }
@@ -876,11 +868,11 @@
         try { await API.heartbeat(); } catch (_) {}
         window.setInterval(() => { if (API.session() && document.visibilityState === 'visible') API.heartbeat().catch(() => {}); }, 120000);
         window.setInterval(async () => {
-          if (!API.session() || document.visibilityState !== 'visible' || S.screen !== 'status' || S.busy) return;
+          if (!API.session() || document.visibilityState !== 'visible' || !S.me || !['guest','pending'].includes(S.me.status) || S.busy) return;
           try {
             const latest = await API.me();
             if (latest && latest.status === 'approved') { S.me = latest; toast('Your Akoma account is approved. Welcome in!'); await route(); }
-            else if (latest && S.me && (latest.status !== S.me.status || latest.id_card_path !== S.me.id_card_path || latest.review_note !== S.me.review_note)) { S.me = latest; render(); }
+            else if (latest && S.me && (latest.status !== S.me.status || latest.selfie_path !== S.me.selfie_path || latest.review_note !== S.me.review_note)) { S.me = latest; render(); }
           } catch (_) { /* A temporary network issue should not interrupt the pending screen. */ }
         }, 30000);
         document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && API.session()) API.heartbeat().catch(() => {}); });

@@ -183,7 +183,7 @@
       await wait();
       if (!(f.age >= 18)) throw new Error('not_allowed');
       if (U.hasMoney(f.bio) || U.hasContact(f.bio)) throw new Error('bio_not_allowed');
-      db.users[sid()] = P(sid(), f.role === 'man' ? 'man' : 'woman', f.name, +f.age, f.city || 'Accra', f.bio || '', f.interests || [], f.looking_for || 'Dating', { status: 'pending', created_at: now() });
+      db.users[sid()] = P(sid(), f.role === 'man' ? 'man' : 'woman', f.name, +f.age, f.city || 'Accra', f.bio || '', f.interests || [], f.looking_for || 'Dating', { status: 'guest', created_at: now() });
       save();
     },
     async updateProfile(patch) {
@@ -221,9 +221,10 @@
     async removePhoto(index) { const m = meRow(); m.photos.splice(index, 1); save(); },
     async uploadVerification(kind, blob) {
       const m = meRow(); const url = await U.blobToDataURL(blob);
-      if (kind === 'selfie') m.selfie_path = url; else m.id_card_path = url;
-      save();
+      if (kind !== 'selfie') throw new Error('ID verification is not used on Akoma.');
+      m.selfie_path = url; save();
     },
+    async submitSelfieVerification() { const m=meRow(); if(!m || m.status==='approved' || m.status==='banned' || !m.selfie_path) throw new Error('selfie_required'); m.status='pending'; save(); },
     async deleteAccount() {
       const id = sid(); delete db.users[id];
       db.matches = db.matches.filter((x) => x.woman_id !== id && x.man_id !== id);
@@ -237,7 +238,7 @@
     async profiles(f) {
       await wait();
       const m = meRow();
-      if (!m || m.status !== 'approved' || m.role === 'admin') return [];
+      if (!m || !['approved','guest','pending'].includes(m.status) || m.role === 'admin') return [];
       f = f || {};
       const other = m.role === 'woman' ? 'man' : 'woman';
       let cards = Object.values(db.users)
@@ -371,8 +372,8 @@
     // ---- timeline ---------------------------------------------------------------
     async feed() {
       await wait();
-      const me = need();
-      return db.posts.filter((p) => (p.status === 'visible' || p.author_id === me.id) && p.status !== 'removed' && db.users[p.author_id] && db.users[p.author_id].status === 'approved' && !blockedBetween(me.id, p.author_id))
+      const me = meRow(); if (!me || !['approved','guest','pending'].includes(me.status)) throw new Error('not_allowed');
+      return db.posts.filter((p) => p.status === 'visible' && db.users[p.author_id] && db.users[p.author_id].status === 'approved' && !blockedBetween(me.id, p.author_id))
         .sort(byNew).slice(0, 60).map((p) => {
           const a = db.users[p.author_id];
           const likes = db.postLikes[p.id] || [];
@@ -449,8 +450,8 @@
         return Object.values(db.users).filter((u) => u.status === 'pending' && u.role !== 'admin').sort((a, b) => new Date(a.created_at) - new Date(b.created_at)).map((u) => ({
           profile: Object.assign({}, u, { photos: u.photos.slice() }),
           selfie: u.selfie_path && u.selfie_path.startsWith('data:') ? u.selfie_path : null,
-          idCard: u.id_card_path && u.id_card_path.startsWith('data:') ? u.id_card_path : null,
-          hasSelfie: !!u.selfie_path, hasCard: !!u.id_card_path, photos: u.photos.slice()
+          idCard: null,
+          hasSelfie: !!u.selfie_path, hasCard: false, photos: u.photos.slice()
         }));
       },
       async setStatus(id, status, note) {

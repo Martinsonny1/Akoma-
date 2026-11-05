@@ -110,3 +110,7 @@ New registrations submit a government-issued ID (Ghana Card accepted) for manual
 ## Latest safety and privacy update
 
 See [PRIORITY_FEATURES_SETUP.md](PRIORITY_FEATURES_SETUP.md) for the required Supabase migration, ID-image cleanup schedule, push notification configuration, and verification checklist. Run the migration and configure the scheduled jobs/webhooks before relying on the new backend features.
+
+## Guest browsing and selfie verification update
+
+For the guest-first onboarding update, deploy the latest app files and run `supabase/guest_selfie_verification_migration.sql` in Supabase SQL Editor after the existing migrations. Read `AKOMA_GUEST_SELFIE_UPDATE.md` for the deployment order, behavior changes, and test checklist. New accounts begin as guests; guests can browse Discover and read Timeline but cannot initiate interactions until selfie review is approved. Selfie review is manual and is not legal identity or age verification.

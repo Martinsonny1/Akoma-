@@ -227,10 +227,12 @@
       // keep the object in storage so the still-visible version does not break.
     },
     async uploadVerification(kind, blob) {
-      const path = uid() + '/' + (kind === 'selfie' ? 'selfie' : 'id-card') + '.jpg';
+      if (kind !== 'selfie') throw new Error('ID verification is not used on Akoma.');
+      const path = uid() + '/selfie.jpg';
       await ok(sb.storage.from('verification').upload(path, blob, { contentType: 'image/jpeg', upsert: true }));
-      await ok(sb.from('profiles').update(kind === 'selfie' ? { selfie_path: path } : { id_card_path: path }).eq('id', uid()));
+      await ok(sb.from('profiles').update({ selfie_path: path }).eq('id', uid()));
     },
+    async submitSelfieVerification() { await ok(sb.rpc('submit_selfie_verification')); },
     // The Edge Function removes every stored file (ID, photos, vault, chat media) and then the account.
     async deleteAccount() {
       await mediaFn({ action: 'delete-account' });
@@ -382,11 +384,8 @@
       async queue() {
         const rows = await ok(sb.from('profiles').select('*').eq('status', 'pending').neq('role', 'admin').order('created_at'));
         return Promise.all(rows.map(async (u) => {
-          const [selfie, card] = await Promise.all([
-            u.selfie_path ? urls([u.selfie_path], 'verification') : [null],
-            u.id_card_path ? urls([u.id_card_path], 'verification') : [null]
-          ]);
-          return { profile: u, selfie: selfie[0], idCard: card[0], hasSelfie: !!u.selfie_path, hasCard: !!u.id_card_path, photos: (await urls(u.photos)).filter(Boolean) };
+          const selfie = u.selfie_path ? await urls([u.selfie_path], 'verification') : [null];
+          return { profile: u, selfie: selfie[0], idCard: null, hasSelfie: !!u.selfie_path, hasCard: false, photos: (await urls(u.photos)).filter(Boolean) };
         }));
       },
       async setStatus(id, status, note) { await ok(sb.rpc('admin_set_status', { target: id, new_status: status, note: note || null })); },
