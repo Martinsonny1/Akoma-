@@ -166,7 +166,7 @@
       return { userId: db.session.userId, confirmationRequired: false };
     },
     async demoLogin(kind) {
-      db.session = { userId: { woman: 'dw', man: 'dm', admin: 'admin1' }[kind], email: kind + '@demo.Meet GH.app' };
+      db.session = { userId: { woman: 'dw', man: 'dm', admin: 'admin1' }[kind], email: kind + '@demo.akoma.app' };
       save();
     },
     async demoApproveMe() { const m = meRow(); if (m) { m.status = 'approved'; save(); } },
@@ -221,7 +221,7 @@
     async removePhoto(index) { const m = meRow(); m.photos.splice(index, 1); save(); },
     async uploadVerification(kind, blob) {
       const m = meRow(); const url = await U.blobToDataURL(blob);
-      if (kind !== 'selfie') throw new Error('ID verification is not used on Meet GH.');
+      if (kind !== 'selfie') throw new Error('ID verification is not used on Akoma.');
       m.selfie_path = url; save();
     },
     async submitSelfieVerification() { const m=meRow(); if(!m || m.status==='approved' || m.status==='banned' || !m.selfie_path) throw new Error('selfie_required'); m.status='pending'; save(); },

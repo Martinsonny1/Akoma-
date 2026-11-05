@@ -1,4 +1,4 @@
-# Meet GH notification badges update
+# Akoma notification badges update
 
 ## Included
 - Red numeric badge on Chats for total unread incoming messages.
@@ -12,8 +12,8 @@
 ## Supabase setup (required once)
 1. Open Supabase Dashboard → SQL Editor.
 2. Run `supabase/notification_badges_migration.sql`.
-3. Deploy the complete updated `Meet-GH` folder.
-4. Refresh/reopen Meet GH.
+3. Deploy the complete updated `Akoma--main` folder.
+4. Refresh/reopen Akoma.
 
 The migration creates only two small per-user read-state tables. It does not modify or delete profiles, messages, matches, or chat records.
 

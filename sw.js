@@ -1,6 +1,6 @@
 // Keeps the app shell available when the connection is weak. Live data is never cached.
-const CACHE = 'meetgh-shell-v18-rebrand';
-const SHELL = ['./', 'index.html', 'css/app.css', 'js/config.js', 'js/shared.js', 'js/api-demo.js', 'js/api-supabase.js', 'js/api.js', 'js/app.js', 'js/calls.js', 'icon.svg', 'icon-192.png', 'icon-512.png', 'images/meet-gh-brand.jpg', 'manifest.webmanifest', 'privacy.html', 'terms.html'];
+const CACHE = 'meetgh-shell-v18-launch';
+const SHELL = ['./', 'index.html', 'css/app.css', 'js/config.js', 'js/shared.js', 'js/api-demo.js', 'js/api-supabase.js', 'js/api.js', 'js/app.js', 'js/calls.js', 'icon.svg', 'manifest.webmanifest', 'privacy.html', 'terms.html', 'welcome.html', 'images/meet-gh-brand.png', 'images/welcome-heart-bg.jpg'];
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', (e) => {
   e.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((k) => k !== CACHE).map((k) => caches.delete(k)))).then(() => self.clients.claim()));
@@ -20,7 +20,7 @@ self.addEventListener('push', (event) => {
   try { if(event.data) data={...data,...event.data.json()}; } catch (_) { if(event.data) data.body=event.data.text(); }
   event.waitUntil(self.registration.showNotification(data.title||'Meet GH',{
     body:data.body||'You have a new update.',icon:'icon-192.png',badge:'icon-192.png',
-    tag:data.tag||'akoma-update',silent:false,data:{url:data.url||'/'}
+    tag:data.tag||'meetgh-update',silent:false,data:{url:data.url||'/'}
   }));
 });
 self.addEventListener('notificationclick',(event)=>{

@@ -66,11 +66,17 @@
   const SCREENS = {
     boot: () => loadingBox(),
 
-    welcome: () => `<div class="splash"><div class="mark brand-mark"><img src="images/meet-gh-brand.jpg" alt="Meet GH" /></div><div><h1>Meet GH</h1></div>
-      <p>Meet someone with energy. Browse freely. Verify by selfie when you're ready.</p>
-      <div class="stack"><button class="btn primary" data-go="phone">Get started</button>
+    welcome: () => `<div class="splash meetgh-splash">
+      <div class="splash-glow splash-glow-one"></div><div class="splash-glow splash-glow-two"></div>
+      <div class="splash-brandline"><span class="splash-brand-symbol">${ic.heart}</span><span>MEET <b>GH</b></span></div>
+      <div class="splash-art-wrap"><img class="splash-art" src="images/meet-gh-brand.png" alt="Meet GH Ghanaian connections logo"></div>
+      <div class="splash-copy"><span class="splash-eyebrow">MEET · CONNECT · BELONG</span>
+        <h1>Your next connection<br><em>starts here.</em></h1>
+        <p>Discover genuine people, enjoy meaningful conversations and find your connection — right here in Ghana.</p>
+      </div>
+      <div class="stack splash-actions"><button class="btn primary" data-go="phone">Get started <span aria-hidden="true">→</span></button>
       ${DEMO ? `<button class="btn ghost" data-act="demo" data-id="woman">Try the demo as Efua (a woman)</button><button class="btn ghost" data-act="demo" data-id="man">Try the demo as Kofi (a man)</button>` : ''}</div>
-      <small>For adults aged 18 and over.</small>
+      <small class="splash-legal">A community for adults aged 18 and over · Made for Ghana</small>
       ${DEMO ? '<small>Demo links: <a style="color:inherit" href="admin/index.html" target="_blank" rel="noopener">Admin dashboard</a> · <a style="color:inherit" href="landing.html" target="_blank" rel="noopener">Waitlist page</a></small>' : ''}</div>`,
 
     phone: () => `${bar('Join Meet GH')}<div class="pad">

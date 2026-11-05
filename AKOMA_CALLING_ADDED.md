@@ -1,4 +1,4 @@
-# Meet GH calling upgrade
+# Akoma calling upgrade
 
 Added in this package:
 - Voice and video call actions in matched chat headers.

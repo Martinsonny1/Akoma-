@@ -1,6 +1,6 @@
-# Meet GH — Featured carousel and live-data restoration
+# Akoma — Featured carousel and live-data restoration
 
-This update restores `js/config.js` from the previous Meet GH notification-badges build. The uploaded `Akoma-.zip` did not contain that file even though `index.html` loads it. Without the Supabase URL and publishable key, `js/api.js` deliberately selects the local demo API, which explains why demo profiles and demo conversations appeared.
+This update restores `js/config.js` from the previous Akoma notification-badges build. The uploaded `Akoma-.zip` did not contain that file even though `index.html` loads it. Without the Supabase URL and publishable key, `js/api.js` deliberately selects the local demo API, which explains why demo profiles and demo conversations appeared.
 
 ## Discover layout
 - Featured profiles are placed directly after the Discover hero and before the guest prompt and normal listings.
@@ -11,7 +11,7 @@ This update restores `js/config.js` from the previous Meet GH notification-badge
 ## Deployment
 1. Deploy the complete `Akoma-` folder from this ZIP, not selected files.
 2. Confirm `js/config.js` remains present in the deployed site. It contains the project's Supabase URL and browser-safe publishable key; it must not be replaced with a service-role key.
-3. Refresh the PWA/site. If the old screen remains, close Meet GH fully and reopen it so the v17 service-worker cache is refreshed.
+3. Refresh the PWA/site. If the old screen remains, close Akoma fully and reopen it so the v17 service-worker cache is refreshed.
 4. Confirm real profiles and conversations load. No SQL migration is required for this layout/config restoration.
 
 No Supabase tables, profiles, messages or matches are deleted or modified by this update.

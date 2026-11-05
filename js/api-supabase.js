@@ -66,7 +66,7 @@
   async function withMedia(row) {
     if (!(row && row.media_path && ['normal', 'timed'].includes(row.media_mode) && (!row.expires_at || new Date(row.expires_at) > new Date()))) return row;
     try { return Object.assign({}, row, { media_url: await chatMediaUrl(row.id, row.media_path) }); }
-    catch (e) { console.warn('Meet GH media load failed:', e); return Object.assign({}, row, { media_err: String((e && e.message) || e).slice(0, 160) }); }
+    catch (e) { console.warn('Akoma media load failed:', e); return Object.assign({}, row, { media_err: String((e && e.message) || e).slice(0, 160) }); }
   }
   async function withUrls(cards, all) {
     const pick = (c) => (all ? c.photos : c.photos.slice(0, 1));
@@ -159,7 +159,7 @@
       const ids = [...new Set(rows.map(r => r.caller_id === uid() ? r.recipient_id : r.caller_id))];
       const people = ids.length ? await ok(sb.from('profiles').select('id,name').in('id',ids)) : [];
       const names = new Map(people.map(p=>[p.id,p.name]));
-      return rows.map(r=>({id:r.id,name:names.get(r.caller_id===uid()?r.recipient_id:r.caller_id)||'Meet GH member',type:r.call_type,status:r.status,created_at:r.created_at,seconds:r.accepted_at&&r.ended_at?Math.max(0,Math.round((new Date(r.ended_at)-new Date(r.accepted_at))/1000)):0,missed:r.status==='missed'||r.status==='declined'}));
+      return rows.map(r=>({id:r.id,name:names.get(r.caller_id===uid()?r.recipient_id:r.caller_id)||'Akoma member',type:r.call_type,status:r.status,created_at:r.created_at,seconds:r.accepted_at&&r.ended_at?Math.max(0,Math.round((new Date(r.ended_at)-new Date(r.accepted_at))/1000)):0,missed:r.status==='missed'||r.status==='declined'}));
     },
 
     // ---- my profile -----------------------------------------------------
@@ -227,7 +227,7 @@
       // keep the object in storage so the still-visible version does not break.
     },
     async uploadVerification(kind, blob) {
-      if (kind !== 'selfie') throw new Error('ID verification is not used on Meet GH.');
+      if (kind !== 'selfie') throw new Error('ID verification is not used on Akoma.');
       const path = uid() + '/selfie.jpg';
       await ok(sb.storage.from('verification').upload(path, blob, { contentType: 'image/jpeg', upsert: true }));
       await ok(sb.from('profiles').update({ selfie_path: path }).eq('id', uid()));
@@ -493,7 +493,7 @@
     const ref = 'AK-' + Date.now() + '-' + Math.random().toString(36).slice(2, 8);
     await new Promise((resolve, reject) => {
       const h = window.PaystackPop.setup({
-        key: C.PAYSTACK_PUBLIC_KEY, email: uid() + '@users.Meet GH.app',
+        key: C.PAYSTACK_PUBLIC_KEY, email: uid() + '@users.akoma.app',
         amount: Math.round(pl.price_ghs * 100), currency: 'GHS', ref, channels: ['mobile_money'],
         metadata: { user_id: uid(), plan: o.plan },
         callback: function () { resolve(); },

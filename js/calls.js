@@ -1,11 +1,11 @@
-// Meet GH one-to-one LiveKit calling.
+// Akoma one-to-one LiveKit calling.
 // UI events are installed once at module load; signalling subscriptions are managed separately.
 // Load LiveKit asynchronously so a CDN/network failure cannot disable call-button events.
   let LiveKit = null;
   let liveKitLoadError = null;
   const liveKitReady = import('https://cdn.jsdelivr.net/npm/livekit-client@2.15.6/+esm')
     .then(mod => { LiveKit = mod; return mod; })
-    .catch(err => { liveKitLoadError = err; console.error('Meet GH LiveKit SDK failed to load:', err); return null; });
+    .catch(err => { liveKitLoadError = err; console.error('Akoma LiveKit SDK failed to load:', err); return null; });
 (() => {
   'use strict';
   const API = () => window.API_SB;
@@ -130,13 +130,13 @@
     active = call;
     const layer = ensureLayer();
     const isVideo = call.call_type === 'video';
-    const name = call.peer_name || 'Meet GH match';
+    const name = call.peer_name || 'Akoma match';
     const connected = !!room;
     const immersive = layer.classList.contains('immersive');
     const incoming = !!call.incoming;
     const outgoing = !incoming && state === 'Calling…';
     layer.innerHTML = `<section class="ak-call-card ${isVideo ? 'is-video' : ''}${isVideo && connected ? ' is-connected' : ''}" role="dialog" aria-modal="true" aria-label="${isVideo ? 'Video' : 'Voice'} call">
-      <div class="ak-call-top"><span class="ak-call-brand">MEET GH</span><button type="button" class="ak-call-min" data-call-ui="hide" aria-label="Minimise call">⌄</button></div>
+      <div class="ak-call-top"><span class="ak-call-brand">AKOMA</span><button type="button" class="ak-call-min" data-call-ui="hide" aria-label="Minimise call">⌄</button></div>
       <div class="ak-remote-video" id="ak-remote-video"></div><div class="ak-self-video" id="ak-self-video"></div>
       <div class="ak-call-avatar">${isVideo ? '▣' : '♡'}</div><h2>${escapeHtml(name)}</h2>
       <p class="ak-call-status" aria-live="polite">${escapeHtml(state)}</p><div class="ak-call-clock" id="ak-call-clock"></div>
@@ -183,7 +183,7 @@
   }
   async function connect(tokenData, call) {
     const sdk = await liveKitReady;
-    if (!sdk) throw new Error('The calling library could not load. Check your internet connection or CDN access, then reload Meet GH.');
+    if (!sdk) throw new Error('The calling library could not load. Check your internet connection or CDN access, then reload Akoma.');
     if (!tokenData?.token || !tokenData?.server_url) throw new Error('The calling server did not return a valid LiveKit connection token.');
     if (room) { try { await room.disconnect(); } catch (_) {} }
     const { Room, RoomEvent, Track } = sdk;
@@ -226,7 +226,7 @@
     clockStart();
   }
   async function callAction(payload) {
-    if (!API()?.callRequest) throw new Error('Meet GH calling service is not ready. Please refresh and try again.');
+    if (!API()?.callRequest) throw new Error('Akoma calling service is not ready. Please refresh and try again.');
     return API().callRequest(payload);
   }
   async function startCall(type) {
@@ -295,7 +295,7 @@
     Sound.stop();
     handlingAction = true; setBusy(true, 'Declining…');
     try { await callAction({ action: 'respond', call_id: active.id, reason: 'decline' }); }
-    catch (e) { console.warn('Meet GH decline failed:', e); }
+    catch (e) { console.warn('Akoma decline failed:', e); }
     finally { handlingAction = false; await finishLocal(); }
   }
   async function hangup() {
@@ -303,7 +303,7 @@
     Sound.stop();
     const c = active; handlingAction = true; setBusy(true, 'Ending call…');
     try { await callAction({ action: 'end', call_id: c.id, reason: 'hangup' }); }
-    catch (e) { console.warn('Meet GH end call failed:', e); }
+    catch (e) { console.warn('Akoma end call failed:', e); }
     finally { handlingAction = false; await finishLocal(); }
   }
   async function finishLocal() {
@@ -378,7 +378,7 @@
         control.textContent = speakerOn ? 'Speaker on' : 'Speaker off'; control.classList.toggle('selected', speakerOn); return;
       }
     } catch (err) {
-      console.error('Meet GH call control failed:', err);
+      console.error('Akoma call control failed:', err);
       setStatus(err?.message || 'That call control could not be applied.');
     }
   });

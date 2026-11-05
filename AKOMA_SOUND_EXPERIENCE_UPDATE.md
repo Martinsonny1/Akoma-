@@ -1,4 +1,4 @@
-# Meet GH sound experience update
+# Akoma sound experience update
 
 ## Included
 - Per-device sound preferences for calls, messages, and matches, stored in localStorage.

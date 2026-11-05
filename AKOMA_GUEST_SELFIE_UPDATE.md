@@ -1,4 +1,4 @@
-# Meet GH guest browsing and selfie verification update
+# Akoma guest browsing and selfie verification update
 
 ## What changed
 - New signups begin as persistent `guest` accounts.
@@ -27,7 +27,7 @@ The existing Supabase project, authentication, profile/photo storage, chat, matc
 ## Deployment order
 1. Run the Supabase migration above.
 2. Deploy the full contents of this ZIP to the same hosting project and root directory.
-3. Open Meet GH on the phone while online and refresh/reopen it to receive the updated service worker.
+3. Open Akoma on the phone while online and refresh/reopen it to receive the updated service worker.
 4. Test with a new test account: skip selfie, browse Discover and Timeline, confirm interactions are blocked; then submit a selfie, approve it in Admin, and confirm full access unlocks.
 
 

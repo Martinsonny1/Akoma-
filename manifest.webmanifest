@@ -1,13 +1,13 @@
 {
   "name": "Meet GH",
   "short_name": "Meet GH",
-  "description": "Meet people, build connections and chat with adults in Ghana.",
+  "description": "Meet people, make genuine connections and find your connection in Ghana.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#430012",
-  "theme_color": "#7A001E",
+  "background_color": "#210711",
+  "theme_color": "#6F1536",
   "icons": [
     {
       "src": "icon-192.png",
