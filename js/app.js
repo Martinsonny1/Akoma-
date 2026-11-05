@@ -38,7 +38,7 @@
   const freshOnb = () => ({ role: null, name: '', dob: '', age: '', city: 'Accra', bio: '', interests: [], looking: 'Dating', photos: [], selfie: null, card: null, agreed: false, done: { profile: false, photos: 0, selfie: false, card: false } });
   const S = {
     screen: 'boot', hist: [], me: null, sub: null, plans: [], profiles: [], feed: [], reqs: { incoming: [], outgoing: [] },
-    matches: [], msgs: [], chat: null, mediaMode: 'normal', allowIncomingCalls: true, vault: [], ephemeral: null, staged: [], mediaPrivacy: 'normal', rec: { state: 'idle' }, sending: false, recording: false, recorder: null, recordChunks: [], card: null, gal: 0, dview: 'grid', f: { min: 18, max: 99, radius: 0 },
+    matches: [], unread: { chats: 0, byChat: {}, matches: 0 }, msgs: [], chat: null, mediaMode: 'normal', allowIncomingCalls: true, vault: [], ephemeral: null, staged: [], mediaPrivacy: 'normal', rec: { state: 'idle' }, sending: false, recording: false, recorder: null, recordChunks: [], card: null, gal: 0, dview: 'grid', f: { min: 18, max: 99, radius: 0 },
     email: '', password: '', authMode: 'signup', step: 'email', busy: false, loading: false, onb: freshOnb(),
     draft: { text: '', blob: null, preview: null, err: '' },
     cmp: { to: null, text: '', err: '', today: 0 }, rep: { target: null, reason: REASONS[0], block: true, details: '' },
@@ -270,7 +270,7 @@
       : `<div class="card"><b>No matches yet</b><p class="muted small">${isW() ? 'Like someone in Discover or accept a request.' : 'When a woman replies, she appears here.'}</p></div>`}</div>`,
 
     inbox: () => `${bar('Chats', { noback: true, right: `<button class="icon-btn" data-act="callhistory" aria-label="Call history">◷</button>${meBtn()}` })}<div class="pad" style="padding-top:6px">${S.loading && !S.matches.length ? loadingBox() : S.matches.length
-      ? `<div class="list">${S.matches.map((m) => `<button class="item" data-act="openchat" data-id="${m.id}">${av(m.other, 50)}<div class="grow"><b>${esc(m.other.name)}</b><span class="muted small" style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.last_body ? esc(m.last_body) : 'Say hello'}</span></div>${m.flagged ? '<span class="badge warn">Flagged</span>' : ''}</button>`).join('')}</div>`
+      ? `<div class="list">${S.matches.map((m) => `<button class="item" data-act="openchat" data-id="${m.id}">${av(m.other, 50)}<div class="grow"><b>${esc(m.other.name)}</b><span class="muted small" style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.last_body ? esc(m.last_body) : 'Say hello'}</span></div>${m.flagged ? '<span class="badge warn">Flagged</span>' : ''}${S.unread.byChat[m.id] ? `<span class="notify-badge">${S.unread.byChat[m.id] > 99 ? '99+' : S.unread.byChat[m.id]}</span>` : ''}</button>`).join('')}</div>`
       : '<div class="card"><b>No chats yet</b></div>'}</div>`,
 
     callhistory: () => `${bar('Call history', { right: meBtn() })}<div class="pad"><div class="list">${(S.callHistory || []).map(c => `<div class="item"><div class="grow"><b>${esc(c.name)}</b><span class="muted small" style="display:block">${c.type === 'video' ? 'Video call' : 'Voice call'} · ${esc(c.status)} · ${new Date(c.created_at).toLocaleString()}</span></div><span class="muted small">${c.seconds ? Math.floor(c.seconds/60)+':'+String(c.seconds%60).padStart(2,'0') : c.missed ? 'Missed' : ''}</span></div>`).join('') || '<div class="card"><b>No calls yet</b><p class="muted small">Your voice and video calls will appear here.</p></div>'}</div></div>`,
@@ -383,8 +383,8 @@
     async discover() { S.profiles = await API.profiles(S.f); },
     async timeline() { const [f, p] = await Promise.all([API.feed(), API.profiles({})]); S.feed = f; S.profiles = p; },
     async likes() { S.reqs = await API.requests(); },
-    async matches() { S.matches = await API.matches(); },
-    async inbox() { S.matches = await API.matches(); },
+    async matches() { S.matches = await API.matches(); await refreshNotifications(); await API.markMatchesSeen(); S.unread.matches = 0; },
+    async inbox() { S.matches = await API.matches(); await refreshNotifications(); },
     async callhistory() { S.callHistory = await API.callHistory(); },
     async settings() { if (!DEMO) S.allowIncomingCalls = await API.callSettings(); },
     async me() { S.me = await API.me(); },
@@ -395,6 +395,11 @@
     async compose() {}
   };
 
+  async function refreshNotifications() {
+    if (!S.me || !S.me.id || DEMO || !API.notificationCounts) return;
+    try { S.unread = await API.notificationCounts(S.matches); } catch (_) { /* badge failures must not break app screens */ }
+  }
+
   // ---------------------------------------------------------------- navigation
   function render() {
     const st = $('#screen').scrollTop;
@@ -404,7 +409,7 @@
     if (showTabs) {
       const tabs = S.me.status === 'approved' ? [['discover', 'Discover', 'tdisc'], ['timeline', 'Timeline', 'ttime'], ['likes', isW() ? 'Requests' : 'Sent', 'tlikes'], ['matches', 'Matches', 'tmatch'], ['inbox', 'Chats', 'tchat']] : [['discover', 'Discover', 'tdisc'], ['timeline', 'Timeline', 'ttime']];
       const key = { tdisc: 't_disc', ttime: 't_time', tlikes: 't_likes', tmatch: 't_match', tchat: 't_chat' };
-      $('#tabs').innerHTML = tabs.map((t) => `<button data-tab="${t[0]}" ${S.screen === t[0] ? 'aria-current="page"' : ''}>${ic[key[t[2]]]}${t[1]}${t[0] === 'likes' && isW() && S.reqs.incoming.length ? `<span class="dot">${S.reqs.incoming.length}</span>` : ''}</button>`).join('');
+      $('#tabs').innerHTML = tabs.map((t) => { const n = t[0] === 'inbox' ? S.unread.chats : t[0] === 'matches' ? S.unread.matches : t[0] === 'likes' && isW() ? S.reqs.incoming.length : 0; return `<button data-tab="${t[0]}" ${S.screen === t[0] ? 'aria-current="page"' : ''}>${ic[key[t[2]]]}${t[1]}${n ? `<span class="dot">${n > 99 ? '99+' : n}</span>` : ''}</button>`; }).join('');
     }
     const demobar = $('#demobar');
     demobar.hidden = !(DEMO && S.screen !== 'welcome' && S.screen !== 'boot');
@@ -480,6 +485,7 @@
     if (!S.msgs.some((x) => x.id === m.id)) {
       S.msgs.push(m); S.msgs.sort((a, b) => a.id - b.id); drawMsgs();
       if (m.sender_id !== S.me.id && document.visibilityState === 'visible' && window.AkomaSounds) window.AkomaSounds.play('message');
+      if (m.sender_id !== S.me.id && S.chat && m.match_id === S.chat.id && API.markChatRead) API.markChatRead(S.chat.id).then(refreshNotifications).catch(() => {});
     }
   }
   async function openChat(matchId) {
@@ -488,7 +494,7 @@
     if (!m) { toast('That chat is no longer available'); return render(); }
     resetComposer(); S.mediaMode = 'normal'; S.mediaPrivacy = 'normal'; S.chat = m; window.AKOMA_CURRENT_MATCH = { id: m.id, name: m.other.name }; S.msgs = []; S.ephemeral=null;
     await go('chat');
-    try { S.msgs = await API.messages(matchId); drawMsgs(); } catch (e) { toast(U.friendly(e)); render(); return; }
+    try { S.msgs = await API.messages(matchId); if (API.markChatRead) await API.markChatRead(matchId); await refreshNotifications(); drawMsgs(); } catch (e) { toast(U.friendly(e)); render(); return; }
     if (S.unwatch) S.unwatch();
     S.unwatch = API.watchMessages(matchId, addMsg);
   }
@@ -899,6 +905,11 @@
       }).catch(() => {});
     }
   })();
+
+  setInterval(async () => {
+    if (!S.me || document.visibilityState !== 'visible' || !API.notificationCounts || S.me.status !== 'approved') return;
+    try { S.matches = await API.matches(); await refreshNotifications(); if (MAIN.includes(S.screen)) render(); } catch (_) {}
+  }, 12000);
 
   window.addEventListener('offline', () => toast('You are offline. Some Akoma features will pause until your connection returns.'));
   window.addEventListener('online', () => toast('Connection restored. You can continue using Akoma.'));

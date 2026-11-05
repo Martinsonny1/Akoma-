@@ -149,38 +149,53 @@ Deno.serve(async (req) => {
   }
 
   if (body.action === 'delete-account') {
-    // Remove every stored file belonging to this member, then the account itself.
-    // Files are removed first: if any removal fails the account is kept so the user can retry.
+    // Delete account-owned media first. If storage cleanup fails, keep the account
+    // intact so the member can retry instead of leaving a half-deleted account.
+    const removePaths = async (bucket: string, paths: string[]) => {
+      const unique = [...new Set(paths.filter(Boolean))];
+      for (let i = 0; i < unique.length; i += 100) {
+        const { error } = await admin.storage.from(bucket).remove(unique.slice(i, i + 100));
+        if (error) throw new Error(`${bucket}_remove_failed: ${error.message}`);
+      }
+    };
     const removeFolder = async (bucket: string) => {
-      for (;;) {
-        const { data: items, error } = await admin.storage.from(bucket).list(userId, { limit: 1000 });
-        if (error) throw error;
-        const paths = (items || []).filter((i) => i.name && i.id).map((i) => `${userId}/${i.name}`);
-        if (!paths.length) return;
-        const { error: rmError } = await admin.storage.from(bucket).remove(paths);
-        if (rmError) throw rmError;
-        if ((items || []).length < 1000) return;
+      // Storage list returns only immediate children. Remove files in pages;
+      // stop safely if a page contains folders rather than looping forever.
+      const { data: items, error } = await admin.storage.from(bucket).list(userId, { limit: 1000 });
+      if (error) throw new Error(`${bucket}_list_failed: ${error.message}`);
+      const paths = (items || []).filter((i) => i.name && i.id).map((i) => `${userId}/${i.name}`);
+      await removePaths(bucket, paths);
+      const nested = (items || []).filter((i) => i.name && !i.id);
+      for (const folder of nested) {
+        const { data: children, error: childError } = await admin.storage.from(bucket).list(`${userId}/${folder.name}`, { limit: 1000 });
+        if (childError) throw new Error(`${bucket}_list_failed: ${childError.message}`);
+        await removePaths(bucket, (children || []).filter((i) => i.name && i.id).map((i) => `${userId}/${folder.name}/${i.name}`));
       }
     };
     try {
-      for (const bucket of ['photos', 'verification', 'vault-media']) await removeFolder(bucket);
-      for (;;) {
-        const { data: rows, error } = await admin.from('messages').select('media_path')
-          .eq('sender_id', userId).not('media_path', 'is', null).limit(100);
-        if (error) throw error;
-        const paths = (rows || []).map((r) => r.media_path as string);
-        if (!paths.length) break;
-        const { error: rmError } = await admin.storage.from('chat-media').remove(paths);
-        if (rmError) throw rmError;
-        await admin.from('messages').update({ media_path: null, media_mime: null, body: 'Expired media' })
-          .eq('sender_id', userId).in('media_path', paths);
+      // Include media in conversations where the deleting member is either sender
+      // or recipient; deleting the profile cascades through matches/messages.
+      const { data: matches, error: matchError } = await admin.from('matches').select('id').or(`woman_id.eq.${userId},man_id.eq.${userId}`);
+      if (matchError) throw new Error(`matches_lookup_failed: ${matchError.message}`);
+      const matchIds = (matches || []).map((m) => m.id);
+      let mediaPaths: string[] = [];
+      if (matchIds.length) {
+        const { data: mediaRows, error: mediaError } = await admin.from('messages').select('media_path').in('match_id', matchIds).not('media_path', 'is', null);
+        if (mediaError) throw new Error(`chat_media_lookup_failed: ${mediaError.message}`);
+        mediaPaths = (mediaRows || []).map((r) => r.media_path as string);
       }
-      const { error: delError } = await admin.auth.admin.deleteUser(userId);
-      if (delError) throw delError;
+      await removePaths('chat-media', mediaPaths);
+      for (const bucket of ['photos', 'verification', 'vault-media']) await removeFolder(bucket);
+
+      // Use the database's SECURITY DEFINER account-deletion routine so all
+      // profile-linked rows are removed by their declared ON DELETE CASCADE rules.
+      const { error: deleteError } = await userClient.rpc('delete_my_account');
+      if (deleteError) throw new Error(`account_delete_failed: ${deleteError.message}`);
       return json({ deleted: true });
     } catch (e) {
-      console.error('AKOMA DELETE ACCOUNT ERROR:', e instanceof Error ? e.message : e);
-      return json({ error: 'delete_failed' }, 500);
+      const detail = e instanceof Error ? e.message : String(e);
+      console.error('AKOMA DELETE ACCOUNT ERROR:', detail);
+      return json({ error: 'delete_failed', detail }, 500);
     }
   }
 

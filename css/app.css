@@ -511,3 +511,7 @@ button,.btn,.toggle,.chip{ -webkit-tap-highlight-color:transparent }
   .tabs button{padding-left:10px;padding-right:10px}
   .glass,.glass-btn,.btn.glass{color:#10262B;text-shadow:none;background:rgba(255,255,255,.94);border:1px solid rgba(16,38,43,.28)}
 }
+
+/* Unread notification badges */
+.notify-badge{display:inline-flex;align-items:center;justify-content:center;min-width:20px;height:20px;padding:0 6px;border-radius:999px;background:#e53945;color:#fff;font-size:11px;font-weight:800;line-height:1;flex-shrink:0}
+.item .notify-badge{margin-left:auto}

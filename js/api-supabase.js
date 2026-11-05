@@ -279,6 +279,37 @@
       const [rows, cards] = await Promise.all([ok(sb.rpc('list_matches')), cardMap()]);
       return rows.map((r) => ({ id: r.match_id, other: cards.get(r.other_id) || unavailable(r.other_id), last_body: r.last_body || '', last_at: r.last_at || r.created_at, flagged: !!r.last_flagged }));
     },
+    async notificationCounts(matchRows) {
+      const me = await ensureMe();
+      const rows = matchRows || await this.matches();
+      const ids = rows.map((m) => m.id);
+      if (!ids.length) return { chats: 0, byChat: {}, matches: 0 };
+      const reads = await ok(sb.from('akoma_chat_reads').select('match_id,read_at').eq('user_id', me.id).in('match_id', ids));
+      const readMap = new Map((reads || []).map((r) => [r.match_id, r.read_at]));
+      const byChat = {}; let chats = 0;
+      for (const m of rows) {
+        let q = sb.from('messages').select('id', { count: 'exact', head: true }).eq('match_id', m.id).neq('sender_id', me.id);
+        const readAt = readMap.get(m.id);
+        if (readAt) q = q.gt('created_at', readAt);
+        const result = await q;
+        if (result.error) throw new Error(result.error.message || 'Could not load unread messages');
+        byChat[m.id] = result.count || 0; chats += byChat[m.id];
+      }
+      const state = await ok(sb.from('akoma_notification_state').select('matches_seen_at').eq('user_id', me.id).maybeSingle());
+      let mq = sb.from('matches').select('id', { count: 'exact', head: true }).eq('status', 'active').or('woman_id.eq.' + me.id + ',man_id.eq.' + me.id);
+      if (state && state.matches_seen_at) mq = mq.gt('created_at', state.matches_seen_at);
+      const mr = await mq;
+      if (mr.error) throw new Error(mr.error.message || 'Could not load new matches');
+      return { chats, byChat, matches: mr.count || 0 };
+    },
+    async markChatRead(matchId) {
+      const me = await ensureMe();
+      await ok(sb.from('akoma_chat_reads').upsert({ user_id: me.id, match_id: matchId, read_at: new Date().toISOString() }, { onConflict: 'user_id,match_id' }));
+    },
+    async markMatchesSeen() {
+      const me = await ensureMe();
+      await ok(sb.from('akoma_notification_state').upsert({ user_id: me.id, matches_seen_at: new Date().toISOString() }, { onConflict: 'user_id' }));
+    },
     async messages(matchId) {
       const rows = await ok(sb.from('messages').select('*').eq('match_id', matchId).order('created_at', { ascending: true }).limit(300));
       return Promise.all(rows.map(withMedia));
