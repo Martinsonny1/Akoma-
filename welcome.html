@@ -50,6 +50,19 @@ footer{border-top:1px solid #ffffff18;padding:25px 0 32px;color:#c9aab5;font-siz
 @media(max-width:800px){.hero{grid-template-columns:1fr;padding:48px 0 45px;gap:20px}.hero-copy{text-align:center}.lead{margin:auto}.actions{justify-content:center}.visual{min-height:0;padding:10px 18px 25px}.art-frame{max-width:430px}.chip-one{left:-10px}.chip-two{right:-10px}.grid{grid-template-columns:1fr}.feature{min-height:0}.nav-note{display:none}}
 @media(max-width:480px){.wrap{width:min(100% - 30px,1160px)}header{height:68px}.hero{min-height:auto;padding:45px 0 40px}h1{font-size:49px}.lead{font-size:15px}.visual{padding-inline:8px;min-height:0}.art-frame{border-radius:23px}.float-chip{font-size:10px;padding:10px 12px}.chip-one{left:-8px;top:12%}.chip-two{right:-8px;bottom:12%}.btn{width:100%}.actions{gap:10px}.bottom-cta{padding:30px 18px}}
 @media(prefers-reduced-motion:reduce){*,*:before,*:after{scroll-behavior:auto!important;animation:none!important;transition:none!important}.reveal{opacity:1;transform:none}}
+dialog.app-modal{border:1px solid #f4c86c55;border-radius:24px;padding:0;max-width:440px;width:calc(100% - 32px);background:linear-gradient(145deg,#4b0c22,#250612);color:var(--cream);box-shadow:0 30px 90px #000a}
+dialog.app-modal::backdrop{background:#0a0208b3;backdrop-filter:blur(4px)}
+.app-modal .m-body{padding:28px 24px 24px;position:relative}
+.app-modal h2{font:500 28px/1.15 "Playfair Display",serif;margin:0 0 6px}
+.app-modal .m-sub{font-size:13px;color:var(--muted);margin:0 0 18px;line-height:1.6}
+.app-modal .m-close{position:absolute;top:12px;right:14px;background:none;border:0;color:#fff;font-size:26px;cursor:pointer;line-height:1}
+.m-card{border:1px solid #ffffff1c;background:#ffffff0a;border-radius:16px;padding:16px;margin-bottom:12px}
+.m-card h3{margin:0 0 8px;font-size:15px;color:var(--gold)}
+.m-card p,.m-card li{font-size:13px;line-height:1.7;color:#ecd3d9;margin:0}
+.m-card ol{margin:0;padding-left:18px}
+.m-card .btn{min-height:46px;margin-top:12px;width:100%;font-size:13px}
+.m-hide{display:none}
+
 </style>
 </head>
 <body>
@@ -66,7 +79,7 @@ footer{border-top:1px solid #ffffff18;padding:25px 0 32px;color:#c9aab5;font-siz
     <p class="lead reveal delay2">Meet interesting people, start genuine conversations and discover the possibilities of a meaningful connection. Your story could begin with one hello.</p>
     <div class="actions reveal delay3">
       <a class="btn primary" href="./index.html">Enter Meet GH <span aria-hidden="true">→</span></a>
-      <a class="btn secondary" href="#why-meet-gh">Discover Meet GH</a>
+      <a class="btn secondary" id="downloadApp" href="downloads/Meet_GH.apk" download="Meet_GH.apk">Download the mobile app <span aria-hidden="true">↓</span></a>
     </div>
     <p class="micro reveal delay3">A welcoming space to meet, connect and belong. For adults aged 18 and over.</p>
   </div>
@@ -93,6 +106,46 @@ footer{border-top:1px solid #ffffff18;padding:25px 0 32px;color:#c9aab5;font-siz
 </main>
 <footer><span>© <span id="year"></span> Meet GH · Meet · Connect · Belong</span><span>For adults 18+ · Ghana</span></footer>
 </div>
-<script>document.getElementById('year').textContent=new Date().getFullYear();</script>
+<dialog class="app-modal" id="appModal" aria-labelledby="appModalTitle">
+  <div class="m-body">
+    <button class="m-close" type="button" id="appModalClose" aria-label="Close">&times;</button>
+    <h2 id="appModalTitle">Get the Meet GH app</h2>
+    <p class="m-sub">Choose your phone to get started.</p>
+    <div class="m-card" id="cardAndroid">
+      <h3>Android</h3>
+      <p>Download the app file, open it, and tap Install. If Android asks, allow installs from your browser or Files app.</p>
+      <a class="btn primary" href="downloads/Meet_GH.apk" download="Meet_GH.apk">Download for Android ↓</a>
+    </div>
+    <div class="m-card" id="cardIos">
+      <h3>iPhone / iPad</h3>
+      <ol>
+        <li>Open this page in <b>Safari</b>.</li>
+        <li>Tap the <b>Share</b> button.</li>
+        <li>Choose <b>Add to Home Screen</b>, then tap <b>Add</b>.</li>
+      </ol>
+      <p style="margin-top:10px">Meet GH will appear on your home screen like any other app.</p>
+    </div>
+  </div>
+</dialog>
+<script>document.getElementById('year').textContent=new Date().getFullYear();
+(function(){
+  var btn=document.getElementById('downloadApp'),modal=document.getElementById('appModal'),
+      cA=document.getElementById('cardAndroid'),cI=document.getElementById('cardIos');
+  var ua=navigator.userAgent||'';
+  var isIOS=/iPhone|iPad|iPod/i.test(ua)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1);
+  var isAndroid=/Android/i.test(ua);
+  function open(){
+    cA.classList.toggle('m-hide',isIOS);
+    cI.classList.toggle('m-hide',isAndroid);
+    if(modal.showModal){modal.showModal()}else{modal.setAttribute('open','')}
+  }
+  btn.addEventListener('click',function(e){
+    if(isAndroid)return; /* Android: let the APK download start */
+    e.preventDefault(); open();
+  });
+  document.getElementById('appModalClose').addEventListener('click',function(){modal.close()});
+  modal.addEventListener('click',function(e){if(e.target===modal)modal.close()});
+})();
+</script>
 </body>
 </html>
