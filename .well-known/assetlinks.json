@@ -1,0 +1,14 @@
+[
+  {
+    "relation": [
+      "delegate_permission/common.handle_all_urls"
+    ],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "com.meetgh.app",
+      "sha256_cert_fingerprints": [
+        "29:D4:2C:58:CA:78:2B:1E:25:E8:C5:75:F2:47:B3:ED:F7:F7:5C:34:34:15:96:0E:3C:6E:0E:A5:5F:C6:DE:CE"
+      ]
+    }
+  }
+]
