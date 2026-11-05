@@ -4,45 +4,73 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#390817">
-<meta name="description" content="Meet GH — meet people, make genuine connections and find your person in Ghana.">
+<meta name="color-scheme" content="dark">
+<meta name="format-detection" content="telephone=no">
+<meta name="robots" content="index,follow,max-image-preview:large">
+<title>Meet GH — Meet People & Find Your Connection in Ghana</title>
+<meta name="description" content="Meet GH is a free, welcoming community for adults 18+ in Ghana. Meet new people, chat and find your connection. Join in seconds, no download needed.">
+<link rel="canonical" href="https://meet-gh.vercel.app/welcome.html">
+
+<!-- Link previews: WhatsApp, Telegram, Facebook, Messenger, X, LinkedIn, iMessage -->
 <meta property="og:type" content="website">
-<meta property="og:title" content="Meet GH — Find Your Connection">
-<meta property="og:description" content="Meet. Connect. Belong. Discover genuine connections in Ghana.">
-<meta property="og:image" content="images/meet-gh-brand.png">
-<title>Meet GH — Find Your Connection</title>
+<meta property="og:site_name" content="Meet GH">
+<meta property="og:url" content="https://meet-gh.vercel.app/welcome.html">
+<meta property="og:title" content="Meet GH — Find Your Connection in Ghana">
+<meta property="og:description" content="Meet new people, chat and find your connection. Free to join. For adults 18+ in Ghana.">
+<meta property="og:image" content="https://meet-gh.vercel.app/images/meet-gh-og.jpg">
+<meta property="og:image:secure_url" content="https://meet-gh.vercel.app/images/meet-gh-og.jpg">
+<meta property="og:image:type" content="image/jpeg">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta property="og:image:alt" content="Meet GH: Your next connection starts here. Meet, connect, belong.">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Meet GH — Find Your Connection in Ghana">
+<meta name="twitter:description" content="Meet new people, chat and find your connection. Free to join. For adults 18+ in Ghana.">
+<meta name="twitter:image" content="https://meet-gh.vercel.app/images/meet-gh-og.jpg">
+<meta name="twitter:image:alt" content="Meet GH: Your next connection starts here.">
+
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="manifest" href="manifest.webmanifest">
+
+<!-- Speed: hero image first, fonts never block the first paint -->
+<link rel="preload" as="image" href="images/meet-gh-hero.webp" type="image/webp" fetchpriority="high">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@0,500;0,600;0,700;1,500;1,600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700&family=Playfair+Display:ital,wght@0,500;1,500&display=swap" media="print" onload="this.media='all'">
+<noscript><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;700&family=Playfair+Display:ital,wght@0,500;1,500&display=swap"></noscript>
 <style>
 :root{--wine:#250612;--wine2:#4b0c22;--ruby:#b81749;--rose:#f2b5c4;--gold:#f4c86c;--cream:#fff7f2;--muted:#e6cbd2}
-*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;min-height:100vh;background:var(--wine);color:var(--cream);font-family:"DM Sans",sans-serif;overflow-x:hidden}
+*{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;min-height:100vh;background:var(--wine);color:var(--cream);font-family:"DM Sans",system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;overflow-x:hidden;-webkit-text-size-adjust:100%}
 body:before{content:"";position:fixed;inset:0;z-index:-3;background:linear-gradient(115deg,rgba(28,3,13,.88),rgba(66,5,27,.72) 52%,rgba(25,4,13,.91)),url("images/welcome-heart-bg.jpg") center/cover no-repeat;transform:scale(1.04)}
 body:after{content:"";position:fixed;inset:0;z-index:-2;pointer-events:none;background:radial-gradient(ellipse at 75% 28%,rgba(230,44,91,.25),transparent 34%),radial-gradient(ellipse at 12% 85%,rgba(241,183,85,.12),transparent 32%)}
 a{color:inherit;text-decoration:none}.wrap{width:min(1160px,calc(100% - 44px));margin:auto}
 header{height:82px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid rgba(255,255,255,.12)}
-.brand{display:flex;align-items:center;gap:11px;font-weight:800;letter-spacing:.15em;font-size:14px}.brand-mark{height:39px;width:39px;border-radius:13px;display:grid;place-items:center;background:linear-gradient(145deg,#ffdce2,#d16a88);color:#511027;box-shadow:0 8px 25px #08030a55}.brand-mark svg{width:22px}.brand b{color:var(--gold)}
+.brand{display:flex;align-items:center;gap:11px;font-weight:700;letter-spacing:.15em;font-size:14px}.brand-mark{height:39px;width:39px;border-radius:13px;display:grid;place-items:center;background:linear-gradient(145deg,#ffdce2,#d16a88);color:#511027;box-shadow:0 8px 25px #08030a55}.brand-mark svg{width:22px}.brand b{color:var(--gold)}
 .nav-note{font-size:12px;color:#e8cbd3;letter-spacing:.06em}
 .hero{min-height:calc(100svh - 82px);display:grid;grid-template-columns:1.03fr .97fr;align-items:center;gap:36px;padding:58px 0 72px}
-.kicker{display:inline-flex;align-items:center;gap:10px;padding:9px 13px;border:1px solid rgba(244,200,108,.35);border-radius:99px;color:#ffdc94;font-size:10px;font-weight:800;letter-spacing:.18em;text-transform:uppercase;background:#fff1}
+.kicker{display:inline-flex;align-items:center;gap:10px;padding:9px 13px;border:1px solid rgba(244,200,108,.35);border-radius:99px;color:#ffdc94;font-size:10px;font-weight:700;letter-spacing:.18em;text-transform:uppercase;background:#fff1}
 .kicker:before{content:"";width:7px;height:7px;border-radius:50%;background:#f7c866;box-shadow:0 0 13px #f7c866}
 h1{font:500 clamp(46px,6.5vw,82px)/.99 "Playfair Display",Georgia,serif;letter-spacing:-.045em;margin:25px 0 20px;max-width:650px}
 h1 em{color:var(--rose);font-weight:500}
 .lead{max-width:510px;color:#f0dce1;font-size:17px;line-height:1.8}
 .actions{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin-top:32px}
-.btn{min-height:55px;padding:0 25px;border-radius:15px;display:inline-flex;align-items:center;justify-content:center;gap:13px;font-weight:800;font-size:14px;transition:transform .25s,box-shadow .25s,filter .25s}
+.btn{min-height:55px;padding:0 25px;border-radius:15px;display:inline-flex;align-items:center;justify-content:center;gap:13px;font-weight:700;font-size:14px;transition:transform .25s,box-shadow .25s,filter .25s}
 .btn:hover{transform:translateY(-3px);filter:brightness(1.06)}
 .primary{color:#381020;background:linear-gradient(110deg,#f7d98f,#e9ad4c 55%,#ffe4a3);box-shadow:0 14px 34px #d998433b;border:1px solid #ffe5a6}
 .secondary{border:1px solid #ffffff40;background:#ffffff0b;color:#fff}
 .micro{font-size:11px;color:#d7b8c2;margin-top:18px}
+.share-btn{cursor:pointer;font-family:inherit;margin-left:10px}.bottom-cta .row{display:flex;gap:12px;justify-content:center;flex-wrap:wrap}.bottom-cta .share-btn{margin-left:0}
+.toast{position:fixed;left:50%;bottom:24px;transform:translateX(-50%);background:#fff7f2;color:#381020;padding:12px 18px;border-radius:12px;font-size:13px;font-weight:700;box-shadow:0 10px 30px #0008;z-index:950}
 .visual{position:relative;display:grid;place-items:center;min-height:480px}
-.visual-glow{position:absolute;width:390px;height:390px;border-radius:50%;background:radial-gradient(circle,#d9235b42,transparent 68%);filter:blur(15px);animation:breathe 6s ease-in-out infinite alternate}
+.visual-glow{position:absolute;width:390px;height:390px;border-radius:50%;background:radial-gradient(circle,#d9235b42,transparent 68%);animation:breathe 6s ease-in-out infinite alternate}
 .art-frame{position:relative;width:min(100%,490px);aspect-ratio:1/1;border-radius:32px;overflow:hidden;border:1px solid #ffd6dc3b;box-shadow:0 35px 100px #0901088c,0 0 55px #d22a5a20;background:#3a0b1b}
 .art-frame:after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,#18030d12 50%,#21040c52)}
-.art-frame img{width:100%;height:100%;object-fit:cover;display:block;animation:slowfloat 9s ease-in-out infinite}
-.float-chip{position:absolute;z-index:2;padding:13px 16px;border-radius:16px;background:#3c1023d9;border:1px solid #f9d8df36;box-shadow:0 14px 40px #0005;backdrop-filter:blur(14px);font-size:12px;color:#ffe9ed;animation:float 5s ease-in-out infinite}
+.art-frame img{width:100%;height:100%;object-fit:cover;display:block}
+.float-chip{position:absolute;z-index:2;padding:13px 16px;border-radius:16px;background:#3c1023f2;border:1px solid #f9d8df36;box-shadow:0 14px 40px #0005;font-size:12px;color:#ffe9ed;animation:float 5s ease-in-out infinite}
 .float-chip strong{display:block;color:var(--gold);font-size:13px;margin-bottom:3px}.chip-one{left:-12px;top:16%}.chip-two{right:-12px;bottom:16%;animation-delay:-2.5s}
-section.benefits{padding:28px 0 76px}.section-head{text-align:center;max-width:600px;margin:0 auto 28px}.section-head span{font-size:10px;letter-spacing:.2em;color:var(--gold);font-weight:800}.section-head h2{font:500 clamp(30px,4vw,44px)/1.1 "Playfair Display",serif;margin:12px 0}.section-head p{color:#d8bac4;line-height:1.7;font-size:14px}
-.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.feature{padding:23px;border-radius:20px;background:linear-gradient(145deg,#ffffff12,#ffffff06);border:1px solid #ffffff19;backdrop-filter:blur(12px);min-height:150px;transition:transform .25s,border-color .25s}.feature:hover{transform:translateY(-5px);border-color:#f2c16b66}.feature .ico{font-size:22px}.feature h3{font-size:15px;margin:13px 0 7px}.feature p{font-size:13px;line-height:1.7;color:#d8bac4}
+section.benefits{padding:28px 0 76px}.section-head{text-align:center;max-width:600px;margin:0 auto 28px}.section-head span{font-size:10px;letter-spacing:.2em;color:var(--gold);font-weight:700}.section-head h2{font:500 clamp(30px,4vw,44px)/1.1 "Playfair Display",serif;margin:12px 0}.section-head p{color:#d8bac4;line-height:1.7;font-size:14px}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}.feature{padding:23px;border-radius:20px;background:linear-gradient(145deg,#ffffff12,#ffffff06);border:1px solid #ffffff19;min-height:150px;transition:transform .25s,border-color .25s}.feature:hover{transform:translateY(-5px);border-color:#f2c16b66}.feature .ico{font-size:22px}.feature h3{font-size:15px;margin:13px 0 7px}.feature p{font-size:13px;line-height:1.7;color:#d8bac4}
 .bottom-cta{margin:0 auto 70px;padding:35px 28px;text-align:center;border-radius:25px;border:1px solid #f4c86c40;background:linear-gradient(120deg,#751333a8,#3a0c20bd);box-shadow:0 20px 60px #0003}.bottom-cta h2{font:500 clamp(28px,4vw,40px) "Playfair Display",serif;margin:0 0 10px}.bottom-cta p{color:#e6cbd2;margin:0 0 22px;font-size:14px}
 footer{border-top:1px solid #ffffff18;padding:25px 0 32px;color:#c9aab5;font-size:11px;display:flex;justify-content:space-between;gap:15px;flex-wrap:wrap}
 .reveal{opacity:0;transform:translateY(22px);animation:reveal .8s cubic-bezier(.2,.7,.2,1) forwards}.delay1{animation-delay:.12s}.delay2{animation-delay:.24s}.delay3{animation-delay:.36s}
@@ -74,18 +102,18 @@ dialog.app-modal::backdrop{background:#0a0208b3;backdrop-filter:blur(4px)}
 <main>
 <section class="hero">
   <div class="hero-copy">
-    <div class="kicker reveal">MADE FOR GHANA · FOR ADULTS 18+</div>
-    <h1 class="reveal delay1">Your next connection <em>starts here.</em></h1>
-    <p class="lead reveal delay2">Meet interesting people, start genuine conversations and discover the possibilities of a meaningful connection. Your story could begin with one hello.</p>
-    <div class="actions reveal delay3">
+    <div class="kicker">MADE FOR GHANA · FOR ADULTS 18+</div>
+    <h1>Your next connection <em>starts here.</em></h1>
+    <p class="lead">Meet interesting people, start genuine conversations and discover the possibilities of a meaningful connection. Your story could begin with one hello.</p>
+    <div class="actions">
       <a class="btn primary" href="./index.html">Enter Meet GH <span aria-hidden="true">→</span></a>
       <a class="btn secondary" id="downloadApp" href="downloads/Meet_GH.apk" download="Meet_GH.apk">Download the mobile app <span aria-hidden="true">↓</span></a>
     </div>
-    <p class="micro reveal delay3">A welcoming space to meet, connect and belong. For adults aged 18 and over.</p>
+    <p class="micro">A welcoming space to meet, connect and belong. For adults aged 18 and over.</p>
   </div>
-  <div class="visual reveal delay2">
+  <div class="visual">
     <div class="visual-glow"></div>
-    <div class="art-frame"><img src="images/meet-gh-brand.png" alt="Meet GH — Find Your Connection"></div>
+    <div class="art-frame"><img src="images/meet-gh-hero.webp" width="640" height="640" alt="Meet GH — Find Your Connection. Meet, connect, belong." fetchpriority="high" decoding="async"></div>
     <div class="float-chip chip-one"><strong>MEET</strong>Someone new</div>
     <div class="float-chip chip-two"><strong>CONNECT</strong>Beyond the first hello</div>
   </div>
@@ -101,7 +129,8 @@ dialog.app-modal::backdrop{background:#0a0208b3;backdrop-filter:blur(4px)}
 <section class="bottom-cta reveal">
   <h2>Every connection starts somewhere.</h2>
   <p>Take the first step. Meet your people on Meet GH.</p>
-  <a class="btn primary" href="./index.html">Get started on Meet GH <span aria-hidden="true">→</span></a>
+  <div class="row"><a class="btn primary" href="./index.html">Get started on Meet GH <span aria-hidden="true">→</span></a>
+  <button class="btn secondary share-btn" id="shareBtn" type="button">Share with friends</button></div>
 </section>
 </main>
 <footer><span>© <span id="year"></span> Meet GH · Meet · Connect · Belong</span><span>For adults 18+ · Ghana</span></footer>
@@ -129,6 +158,17 @@ dialog.app-modal::backdrop{background:#0a0208b3;backdrop-filter:blur(4px)}
 </dialog>
 <script>document.getElementById('year').textContent=new Date().getFullYear();
 (function(){
+  var b=document.getElementById('shareBtn'); if(!b)return;
+  var url='https://meet-gh.vercel.app/welcome.html', text='Meet GH: meet people and find your connection in Ghana.';
+  function toast(m){var t=document.createElement('div');t.className='toast';t.setAttribute('role','status');t.textContent=m;document.body.appendChild(t);setTimeout(function(){t.remove()},2200)}
+  b.addEventListener('click',function(){
+    if(navigator.share){navigator.share({title:'Meet GH',text:text,url:url}).catch(function(){})}
+    else if(navigator.clipboard){navigator.clipboard.writeText(url).then(function(){toast('Link copied')},function(){toast(url)})}
+    else{toast(url)}
+  });
+})();
+
+(function(){
   var btn=document.getElementById('downloadApp'),modal=document.getElementById('appModal'),
       cA=document.getElementById('cardAndroid'),cI=document.getElementById('cardIos');
   var ua=navigator.userAgent||'';
@@ -147,5 +187,6 @@ dialog.app-modal::backdrop{background:#0a0208b3;backdrop-filter:blur(4px)}
   modal.addEventListener('click',function(e){if(e.target===modal)modal.close()});
 })();
 </script>
+<script src="js/app-promo.js" defer></script>
 </body>
 </html>
