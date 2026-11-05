@@ -25,7 +25,11 @@
   // Web Audio feedback. Audio is unlocked by the user's first interaction,
   // as required by mobile browsers; tones never rely on external media files.
   const Sound = (() => {
-    let ctx = null, timer = null, kind = null, enabled = true;
+    let ctx = null, timer = null, kind = null;
+    const defaults = { calls: true, messages: true, matches: true, ringtone: 'classic' };
+    let prefs = { ...defaults };
+    try { prefs = { ...defaults, ...JSON.parse(localStorage.getItem('akoma_sound_preferences') || '{}') }; } catch (_) {}
+    function save() { try { localStorage.setItem('akoma_sound_preferences', JSON.stringify(prefs)); } catch (_) {} }
     function context() {
       const Ctx = window.AudioContext || window.webkitAudioContext;
       if (!Ctx) return null;
@@ -34,7 +38,7 @@
       return ctx;
     }
     function tone(freq, duration, volume = 0.12, type = 'sine', delay = 0) {
-      const c = context(); if (!c || !enabled) return;
+      const c = context(); if (!c) return;
       const start = c.currentTime + delay;
       const osc = c.createOscillator(), gain = c.createGain();
       osc.type = type; osc.frequency.setValueAtTime(freq, start);
@@ -46,27 +50,49 @@
     }
     function pattern(name) {
       if (name === 'incoming') {
-        tone(440, .42, .16); tone(554.37, .42, .14, 'sine', .46);
+        if (prefs.ringtone === 'gentle') { tone(523.25,.32,.13); tone(659.25,.42,.12,'sine',.38); }
+        else if (prefs.ringtone === 'digital') { tone(784,.16,.12,'triangle'); tone(988,.16,.12,'triangle',.2); tone(784,.16,.12,'triangle',.42); }
+        else { tone(440,.42,.16); tone(554.37,.42,.14,'sine',.46); }
       } else if (name === 'outgoing') {
-        tone(425, 1.1, .09); tone(480, 1.1, .08, 'sine', .04);
+        tone(425,1.1,.09); tone(480,1.1,.08,'sine',.04);
       } else if (name === 'connected') {
-        tone(660, .12, .10); tone(880, .16, .10, 'sine', .14);
+        tone(660,.12,.10); tone(880,.16,.10,'sine',.14);
       } else if (name === 'ended') {
-        tone(520, .12, .08); tone(390, .22, .08, 'sine', .14);
+        tone(520,.12,.08); tone(390,.22,.08,'sine',.14);
       } else if (name === 'message') {
-        tone(740, .10, .055); tone(988, .13, .05, 'sine', .11);
+        tone(740,.10,.055); tone(988,.13,.05,'sine',.11);
+      } else if (name === 'match') {
+        tone(659.25,.16,.09); tone(783.99,.16,.09,'sine',.17); tone(987.77,.28,.10,'sine',.34);
       }
+    }
+    function allowed(name) {
+      if (['incoming','outgoing','connected','ended'].includes(name)) return prefs.calls;
+      if (name === 'message') return prefs.messages;
+      if (name === 'match') return prefs.matches;
+      return true;
     }
     function stop() { if (timer) clearInterval(timer); timer = null; kind = null; }
     function loop(name, interval) {
-      stop(); kind = name; pattern(name);
+      stop(); if (!allowed(name)) return;
+      kind = name; pattern(name);
       timer = setInterval(() => { if (kind === name) pattern(name); }, interval);
     }
-    function play(name) { stop(); pattern(name); }
+    function play(name) { stop(); if (allowed(name)) pattern(name); }
     function unlock() { const c = context(); if (c?.state === 'suspended') c.resume().catch(() => {}); }
+    function setPreference(key, value) {
+      if (!(key in prefs)) return;
+      prefs[key] = value; save();
+      if (key === 'calls' && !value) stop();
+    }
     document.addEventListener('click', unlock, { passive: true });
     document.addEventListener('touchend', unlock, { passive: true });
-    return { loop, play, stop, unlock, setEnabled(v) { enabled = !!v; if (!enabled) stop(); } };
+    return {
+      loop, play, stop, unlock,
+      preferences: () => ({ ...prefs }),
+      setPreference,
+      previewRingtone: () => { stop(); pattern('incoming'); },
+      setEnabled(v) { setPreference('calls', !!v); setPreference('messages', !!v); setPreference('matches', !!v); }
+    };
   })();
   window.AkomaSounds = Sound;
 

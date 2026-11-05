@@ -341,10 +341,24 @@
 
     settings: () => {
       const m = S.me;
+      const soundPrefs = window.AkomaSounds ? window.AkomaSounds.preferences() : { calls: true, messages: true, matches: true, ringtone: 'classic' };
+      const soundToggle = (key, title, sub) => `<button class="toggle" role="switch" aria-checked="${!!soundPrefs[key]}" data-act="soundtoggle" data-id="${key}"><span><b>${title}</b><span class="muted small" style="display:block">${sub}</span></span><span class="sw"></span></button>`;
       const tg = (k, title, sub) => `<button class="toggle" role="switch" aria-checked="${!!m[k]}" data-act="set" data-id="${k}"><span><b>${title}</b>${sub ? `<span class="muted small" style="display:block">${sub}</span>` : ''}</span><span class="sw"></span></button>`;
       return `${bar('Settings')}<div class="pad"><div class="list">
         ${isW() ? tg('hide_photo', 'Hide my profile photo', 'Only people you match with can see it') : ''}
         ${tg('hide_from_contacts', 'Hide me from my phone contacts')}${tg('notifications', 'Notifications')}<button class="toggle" data-act="pushenable"><span><b>Enable push alerts</b><span class="muted small" style="display:block">Receive alerts when Akoma is not open (once push delivery is configured)</span></span><span class="sw"></span></button>
+        <div class="card stack" style="margin:12px 0">
+          <div><b>Sound settings</b><p class="muted small">Choose which sounds Akoma plays on this device.</p></div>
+          ${soundToggle('calls', 'Call sounds', 'Ringtones, ringback and call connection sounds')}
+          ${soundToggle('messages', 'Message sounds', 'A gentle sound for new incoming messages')}
+          ${soundToggle('matches', 'Match sounds', 'A short celebration when a new match is made')}
+          <label class="f">Incoming ringtone<select id="akoma-ringtone" class="full">
+            <option value="classic"${soundPrefs.ringtone==='classic'?' selected':''}>Classic — warm double tone</option>
+            <option value="gentle"${soundPrefs.ringtone==='gentle'?' selected':''}>Gentle — soft chime</option>
+            <option value="digital"${soundPrefs.ringtone==='digital'?' selected':''}>Digital — modern triple tone</option>
+          </select></label>
+          <button class="btn sm ghost" data-act="soundpreview">Preview ringtone</button>
+        </div>
         ${tg('online_visible', 'Show my online status', 'Optional and equal for men and women. When off, you also cannot see other members’ activity.')}
         ${!DEMO ? `<button class="toggle" role="switch" aria-checked="${S.allowIncomingCalls}" data-act="callsetting"><span><b>Allow incoming calls</b><span class="muted small" style="display:block">Turn off voice and video call invitations</span></span><span class="sw"></span></button>` : ''}
         <div class="card stack"><b>Nearby users</b><p class="muted small">Optional. If you enable this, Akoma stores an approximate location rounded to about 500 metres. Other members never receive your coordinates or see a map—only a broad distance band, and only when both of you enable nearby sharing. This setting works the same for men and women.</p>
@@ -468,7 +482,12 @@
     if (S.ephemeral) { const m=S.msgs.find(x=>String(x.id)===String(S.ephemeral.id)); const media=m&&m.message_type==='video'?`<video src="${S.ephemeral.url}" controls autoplay playsinline></video>`:m&&m.message_type==='audio'?`<audio src="${S.ephemeral.url}" controls autoplay></audio>`:`<img src="${S.ephemeral.url}" alt="Private expiring media">`; box.insertAdjacentHTML('beforeend',`<div class="ephemeral-view"><div class="ephemeral-panel"><div class="row" style="justify-content:space-between"><b>Private media</b><button class="btn sm danger" data-act="closemedia" data-id="${S.ephemeral.id}">Close & destroy</button></div>${media}<p class="muted small">Closing deletes the server copy. A recipient may still capture what is displayed.</p></div></div>`); }
     box.scrollTop = box.scrollHeight;
   }
-  function addMsg(m) { if (!S.msgs.some((x) => x.id === m.id)) { S.msgs.push(m); S.msgs.sort((a, b) => a.id - b.id); drawMsgs(); } }
+  function addMsg(m) {
+    if (!S.msgs.some((x) => x.id === m.id)) {
+      S.msgs.push(m); S.msgs.sort((a, b) => a.id - b.id); drawMsgs();
+      if (m.sender_id !== S.me.id && document.visibilityState === 'visible' && window.AkomaSounds) window.AkomaSounds.play('message');
+    }
+  }
   async function openChat(matchId) {
     let m = S.matches.find((x) => x.id === matchId);
     if (!m) { S.matches = await API.matches(); m = S.matches.find((x) => x.id === matchId); }
@@ -688,7 +707,7 @@
       case 'pass': { const p = S.profiles.find((x) => x.id === id); if (p) p.passed = true; render(); try { await API.passProfile(id); } catch (e) { /* local skip is enough */ } return; }
       case 'like': {
         const p = S.profiles.find((x) => x.id === id) || S.card;
-        if (isW()) return guard(async () => { const mid = await API.likeProfile(id); toast('Chat opened with ' + p.name); S.matches = await API.matches(); await openChat(mid); });
+        if (isW()) return guard(async () => { const mid = await API.likeProfile(id); if (window.AkomaSounds) window.AkomaSounds.play('match'); toast('Chat opened with ' + p.name); S.matches = await API.matches(); await openChat(mid); });
         if (p && p.is_match) return act('openchat', id);
         return startCompose(p);
       }
@@ -701,7 +720,7 @@
       }
       case 'applyf': { const lo = Math.max(18, +$('#fmin').value || 18), hi = Math.min(99, +$('#fmax').value || 99); S.f = { min: Math.min(lo, hi), max: Math.max(lo, hi), radius: +($('#fradius')||{}).value || 0 }; toast('Filters applied'); S.hist.pop(); return go('discover', { back: true }); }
       case 'resetf': S.f = { min: 18, max: 99, radius: 0 }; S.hist.pop(); return go('discover', { back: true });
-      case 'accept': return guard(async () => { const mid = await API.respondRequest(id, true); S.reqs.incoming = S.reqs.incoming.filter((r) => r.id !== id); S.matches = await API.matches(); toast('Chat opened'); await openChat(mid); });
+      case 'accept': return guard(async () => { const mid = await API.respondRequest(id, true); if (window.AkomaSounds) window.AkomaSounds.play('match'); S.reqs.incoming = S.reqs.incoming.filter((r) => r.id !== id); S.matches = await API.matches(); toast('Chat opened'); await openChat(mid); });
       case 'decline': return guard(async () => { await API.respondRequest(id, false); S.reqs.incoming = S.reqs.incoming.filter((r) => r.id !== id); });
       case 'callhistory': return go('callhistory');
       case 'callsetting': return guard(async()=>{ S.allowIncomingCalls = await API.setIncomingCalls(!S.allowIncomingCalls); toast(S.allowIncomingCalls ? 'Incoming calls enabled' : 'Incoming calls disabled'); render(); });
@@ -763,6 +782,12 @@
       }
       case 'rmphoto': return guard(async () => { await API.removePhoto(+id); S.me = await API.me(); toast('Photo removal submitted for moderator review.'); });
       case 'pushenable': return guard(async () => { await API.enablePush(); toast('This device is subscribed to push alerts.'); });
+      case 'soundtoggle': {
+        const p = window.AkomaSounds && window.AkomaSounds.preferences();
+        if (!p) return;
+        window.AkomaSounds.setPreference(id, !p[id]); return render();
+      }
+      case 'soundpreview': if (window.AkomaSounds) { window.AkomaSounds.unlock(); window.AkomaSounds.previewRingtone(); } return;
       case 'set': {
         const v = !S.me[id]; S.me[id] = v; render();
         try {
@@ -802,6 +827,12 @@
 
   // ---------------------------------------------------------------- events
   const phone = $('#phone');
+  document.addEventListener('change', (event) => {
+    if (event.target && event.target.id === 'akoma-ringtone' && window.AkomaSounds) {
+      window.AkomaSounds.setPreference('ringtone', event.target.value);
+      window.AkomaSounds.previewRingtone();
+    }
+  });
   document.addEventListener('click', (e) => { const m = $('#privmenu'); if (m && !m.hidden && !e.target.closest('.privacy-wrap')) closePriv(); });
   phone.addEventListener('click', (e) => {
     const t = e.target.closest('[data-tab],[data-go],[data-act]'); if (!t || t.tagName === 'LABEL') return;
