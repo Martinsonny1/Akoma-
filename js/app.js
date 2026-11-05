@@ -170,10 +170,15 @@
       const grid = true;
       const head = bar('Discover', { noback: true, right: `<button class="icon-btn" data-go="filters" aria-label="Filters">${ic.filter}</button>${meBtn()}` });
       if (S.loading && !S.profiles.length) return head + loadingBox();
-      const list = S.profiles.filter((p) => grid || !(p.passed || p.is_match || p.request_sent));
-      if (!list.length) return `${head}<div class="pad"><div class="card stack"><b>No one new right now</b><p class="muted">Widen your filters or check back later. New verified people are added daily.</p><button class="btn sm" data-go="filters">Change filters</button></div></div>`;
+      const eligible = S.profiles.filter((p) => grid || !(p.passed || p.is_match || p.request_sent));
+      const featured = eligible.filter((p) => p.featured && !p.passed && !p.is_match && !p.request_sent).slice(0, 10);
+      const featuredIds = new Set(featured.map((p) => p.id));
+      const list = eligible.filter((p) => !featuredIds.has(p.id));
+      const hero = `<section class="ak-page-hero ak-discover-hero"><div class="ak-page-hero-copy"><span class="ak-hero-kicker">AKOMA · DISCOVER</span><h1>Discover connections.</h1><p>Someone new could change everything.</p></div></section>`;
+      const featuredRail = featured.length ? `<section class="ak-featured-section"><div class="ak-section-heading"><div><span class="ak-hero-kicker">HANDPICKED FOR YOU</span><h3>Featured profiles</h3></div><span class="ak-rail-hint">Swipe to explore</span></div><div class="ak-featured-rail">${featured.map((p) => `<button class="ak-featured-card" data-act="open" data-id="${p.id}" aria-label="View featured profile ${esc(p.name)}"><span class="ak-featured-photo">${av(p, 150, true)}</span><span class="ak-featured-caption"><b>${esc(p.name)}, ${p.age}</b><span class="ak-featured-meta">${p.activity_label === 'Online now' ? '<i class="ak-presence-dot is-live"></i> Online' : '✦ Featured'}</span></span></button>`).join('')}</div></section>` : '';
+      if (!list.length) return `${head}${hero}<div class="discover-grid-wrap">${featuredRail}<div class="card stack"><b>No one new right now</b><p class="muted">Widen your filters or check back later. New verified people are added daily.</p><button class="btn sm" data-go="filters">Change filters</button></div></div>`;
       if (grid) {
-        return `${head}<div class="discover-grid-wrap"><div class="pgrid">${list.map((p) => {
+        return `${head}${hero}<div class="discover-grid-wrap">${featuredRail}<div class="ak-section-heading ak-people-heading"><div><span class="ak-hero-kicker">FIND YOUR CONNECTION</span><h3>People you might like</h3></div></div><div class="pgrid">${list.map((p) => {
           const isNew = p.created_at && (Date.now() - new Date(p.created_at).getTime()) < 7 * 86400000;
           const photo = av(p, 260, true);
           return `<button class="pcell ak-profile-tile" data-act="open" data-id="${p.id}" aria-label="View ${esc(p.name)}, age ${p.age}">
@@ -212,7 +217,8 @@
           ${p.body ? `<p>${esc(p.body)}</p>` : ''}${img}
           <div class="row"><button class="chip" aria-pressed="${p.liked}" data-act="plike" data-id="${p.id}">${ic.heart.replace('<svg', '<svg style="width:14px;height:14px;vertical-align:-2px;margin-right:5px"')}${p.likes}</button></div></div>`;
       }).join('');
-      return `${bar('Timeline', { noback: true, right: meBtn() })}<div class="pad" style="padding-top:8px">
+      const timelineHero = `<section class="ak-page-hero ak-timeline-hero"><div class="ak-page-hero-copy"><span class="ak-hero-kicker">AKOMA · COMMUNITY</span><h1>Moments on Akoma.</h1><p>Little moments. Real connections.</p></div></section>`;
+      return `${bar('Timeline', { noback: true, right: meBtn() })}${timelineHero}<div class="pad" style="padding-top:8px">
         <div class="compose"><textarea id="ptxt" maxlength="500" placeholder="Share something with the community">${esc(d.text)}</textarea>
           ${d.preview ? `<div class="attach"><img src="${d.preview}" alt="Photo to post"><button class="icon-btn" data-act="rmimg" aria-label="Remove photo">${ic.x}</button></div>` : ''}
           ${d.err ? `<p class="err">${esc(d.err)}</p>` : ''}
