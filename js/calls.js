@@ -19,7 +19,56 @@
   let ringTimer = null;
   let startedAt = 0;
   let handlingAction = false;
+
   const remoteAudio = new Set();
+
+  // Web Audio feedback. Audio is unlocked by the user's first interaction,
+  // as required by mobile browsers; tones never rely on external media files.
+  const Sound = (() => {
+    let ctx = null, timer = null, kind = null, enabled = true;
+    function context() {
+      const Ctx = window.AudioContext || window.webkitAudioContext;
+      if (!Ctx) return null;
+      if (!ctx) ctx = new Ctx();
+      if (ctx.state === 'suspended') ctx.resume().catch(() => {});
+      return ctx;
+    }
+    function tone(freq, duration, volume = 0.12, type = 'sine', delay = 0) {
+      const c = context(); if (!c || !enabled) return;
+      const start = c.currentTime + delay;
+      const osc = c.createOscillator(), gain = c.createGain();
+      osc.type = type; osc.frequency.setValueAtTime(freq, start);
+      gain.gain.setValueAtTime(0.0001, start);
+      gain.gain.exponentialRampToValueAtTime(Math.max(0.001, volume), start + 0.025);
+      gain.gain.exponentialRampToValueAtTime(0.0001, start + duration);
+      osc.connect(gain); gain.connect(c.destination);
+      osc.start(start); osc.stop(start + duration + 0.03);
+    }
+    function pattern(name) {
+      if (name === 'incoming') {
+        tone(440, .42, .16); tone(554.37, .42, .14, 'sine', .46);
+      } else if (name === 'outgoing') {
+        tone(425, 1.1, .09); tone(480, 1.1, .08, 'sine', .04);
+      } else if (name === 'connected') {
+        tone(660, .12, .10); tone(880, .16, .10, 'sine', .14);
+      } else if (name === 'ended') {
+        tone(520, .12, .08); tone(390, .22, .08, 'sine', .14);
+      } else if (name === 'message') {
+        tone(740, .10, .055); tone(988, .13, .05, 'sine', .11);
+      }
+    }
+    function stop() { if (timer) clearInterval(timer); timer = null; kind = null; }
+    function loop(name, interval) {
+      stop(); kind = name; pattern(name);
+      timer = setInterval(() => { if (kind === name) pattern(name); }, interval);
+    }
+    function play(name) { stop(); pattern(name); }
+    function unlock() { const c = context(); if (c?.state === 'suspended') c.resume().catch(() => {}); }
+    document.addEventListener('click', unlock, { passive: true });
+    document.addEventListener('touchend', unlock, { passive: true });
+    return { loop, play, stop, unlock, setEnabled(v) { enabled = !!v; if (!enabled) stop(); } };
+  })();
+  window.AkomaSounds = Sound;
 
   const el = (tag, attrs = {}, html = '') => {
     const n = document.createElement(tag);
@@ -133,6 +182,7 @@
     muted = false; cameraOff = false; speakerOn = true;
     // Render the connected UI first: paint() rebuilds the DOM and would wipe any video attached earlier.
     paint(call, 'Connected');
+    Sound.play('connected');
     await room.localParticipant.setMicrophoneEnabled(true);
     if (call.call_type === 'video') {
       await room.localParticipant.setCameraEnabled(true);
@@ -164,6 +214,7 @@
       const result = await callAction({ action: 'start', match_id: chat.id, call_type: type });
       const call = { ...result.call, incoming: false, peer_name: chat.name };
       paint(call, 'Calling…');
+      Sound.loop('outgoing', 3000);
       const callId = call.id;
       clearTimeout(ringTimer);
       ringTimer = setTimeout(async () => {
@@ -177,6 +228,7 @@
   async function acceptCall() {
     if (!active || handlingAction) return;
     handlingAction = true;
+    Sound.stop();
     clearTimeout(ringTimer); ringTimer = null;
     setBusy(true, 'Answering…');
     try {
@@ -214,6 +266,7 @@
   }
   async function declineCall() {
     if (!active || handlingAction) return;
+    Sound.stop();
     handlingAction = true; setBusy(true, 'Declining…');
     try { await callAction({ action: 'respond', call_id: active.id, reason: 'decline' }); }
     catch (e) { console.warn('Akoma decline failed:', e); }
@@ -221,12 +274,14 @@
   }
   async function hangup() {
     if (!active || handlingAction) return;
+    Sound.stop();
     const c = active; handlingAction = true; setBusy(true, 'Ending call…');
     try { await callAction({ action: 'end', call_id: c.id, reason: 'hangup' }); }
     catch (e) { console.warn('Akoma end call failed:', e); }
     finally { handlingAction = false; await finishLocal(); }
   }
   async function finishLocal() {
+    Sound.stop();
     clearTimeout(ringTimer); ringTimer = null; clearInterval(timer); timer = null;
     if (room) { try { await room.disconnect(); } catch (_) {} room = null; }
     remoteAudio.forEach(node => { try { node.remove(); } catch (_) {} }); remoteAudio.clear();
@@ -239,6 +294,7 @@
     const match = matches.find(m => m.id === row.match_id);
     const call = { ...row, incoming: true, peer_name: match?.other?.name || 'Your match' };
     paint(call, 'Incoming ' + (row.call_type === 'video' ? 'video' : 'voice') + ' call');
+    Sound.loop('incoming', 2400);
     clearTimeout(ringTimer);
     ringTimer = setTimeout(async () => {
       if (active?.id === row.id && active.incoming) {
@@ -253,11 +309,13 @@
     if (row.status === 'ringing' && row.recipient_id === API()?.session?.()?.userId) { await incoming(row); return; }
     if (active && row.id === active.id) {
       if (row.status === 'accepted' && !active.incoming && !room) {
+        Sound.stop();
         clearTimeout(ringTimer);
         try { const token = await callAction({ action: 'token', call_id: row.id }); await connect(token, active); }
         catch (e) { alert(e.message || 'Could not connect call.'); finishLocal(); }
       } else if (['declined', 'missed', 'ended', 'failed'].includes(row.status)) {
         setStatus(row.status === 'declined' ? 'Call declined' : row.status === 'missed' ? 'No answer' : 'Call ended');
+        Sound.stop(); Sound.play('ended');
         setTimeout(finishLocal, 1400);
       }
     }

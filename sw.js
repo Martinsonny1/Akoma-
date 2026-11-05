@@ -20,7 +20,7 @@ self.addEventListener('push', (event) => {
   try { if(event.data) data={...data,...event.data.json()}; } catch (_) { if(event.data) data.body=event.data.text(); }
   event.waitUntil(self.registration.showNotification(data.title||'Akoma',{
     body:data.body||'You have a new update.',icon:'icon-192.png',badge:'icon-192.png',
-    tag:data.tag||'akoma-update',data:{url:data.url||'/'}
+    tag:data.tag||'akoma-update',silent:false,data:{url:data.url||'/'}
   }));
 });
 self.addEventListener('notificationclick',(event)=>{
