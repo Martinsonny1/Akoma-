@@ -159,7 +159,7 @@
       const head = bar('Discover', { noback: true, right: `<button class="icon-btn" data-go="filters" aria-label="Filters">${ic.filter}</button>${meBtn()}` });
       if (S.loading && !S.profiles.length) return head + loadingBox();
       const eligible = S.profiles.filter((p) => grid || !(p.passed || p.is_match || p.request_sent));
-      const featured = eligible.filter((p) => p.featured && !p.passed && !p.is_match && !p.request_sent).slice(0, 10);
+      const featured = S.profiles.filter((p) => p.featured === true || p.featured === 'true' || p.is_featured === true).slice(0, 10);
       const list = eligible; // Featured members remain in the main listing as well as the featured carousel.
       const hero = `<section class="ak-page-hero ak-discover-hero"><div class="ak-page-hero-copy"><span class="ak-hero-kicker">AKOMA · DISCOVER</span><h1>Discover connections.</h1><p>Someone new could change everything.</p></div></section>`;
       const guestPrompt = S.me && S.me.status !== 'approved' ? `<div class="card stack"><div class="row"><span class="badge warn">${S.me.status === 'pending' ? 'Selfie review pending' : 'Guest account'}</span><span class="muted small">Browse freely</span></div><p class="muted small">${S.me.status === 'pending' ? 'Your selfie is being reviewed. Full access unlocks after approval.' : 'Verify with a selfie to unlock likes, messaging and calls.'}</p>${S.me.status !== 'pending' ? fileLabel('pending-selfie', 'Verify with selfie', 'capture="user"') : ''}</div>` : '';
@@ -186,7 +186,7 @@
         }).join('')}</div></div>`;
       }
       const p = list[0];
-      return `${head}${guestPrompt}<div class="deck"><div class="pcard" data-act="open" data-id="${p.id}"><div class="hero">${av(p, 190, true)}</div>
+      return `${head}${hero}${featuredRail}${guestPrompt}<div class="deck"><div class="pcard" data-act="open" data-id="${p.id}"><div class="hero">${av(p, 190, true)}</div>
         <div><div class="row wrap" style="gap:8px"><h3>${esc(p.name)}, ${p.age}</h3>${vb()}${p.featured ? '<span class="badge gold">Featured</span>' : ''}</div><p class="muted small">${esc(p.city)}${p.distance_band ? ' · '+esc(p.distance_band)+' away' : ''}${p.activity_label ? ' · '+esc(p.activity_label) : ''}</p></div>
         ${hiddenNote(p)}<p>${esc(p.bio)}</p>${tags(p.interests)}</div>
         ${S.me && S.me.status === 'approved' ? `<div class="acts"><button class="round" data-act="pass" data-id="${p.id}" aria-label="Pass">${ic.x}</button><button class="round like" data-act="like" data-id="${p.id}" aria-label="${isW() ? 'Like' : 'Send message request'}">${ic.heart}</button></div><p class="muted small" style="text-align:center">${isW() ? 'When you like someone, a chat opens. Men can also send free message requests.' : 'Send a free message request. She decides whether to reply.'}</p>` : '<p class="muted small" style="text-align:center">Verify with a selfie to like, pass and start conversations.</p>'}</div>`;
