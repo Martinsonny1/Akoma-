@@ -27,6 +27,10 @@
     n.innerHTML = html;
     return n;
   };
+  const svg = d => `<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${d}</svg>`;
+  const ICON_FS = svg('<path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/>');
+  const ICON_EXIT = svg('<path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/>');
+  const ICON_MAX = svg('<path d="M14 4h6v6M10 20H4v-6M20 4l-7 7M4 20l7-7"/>');
   const escapeHtml = s => String(s || '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
   function ensureLayer() {
@@ -41,7 +45,7 @@
   function setBusy(busy, label) {
     const layer = ensureLayer();
     layer.querySelectorAll('[data-call-ui]').forEach(b => {
-      if (['hide'].includes(b.dataset.callUi)) return;
+      if (['hide','fullscreen','maximise'].includes(b.dataset.callUi)) return;
       b.disabled = !!busy;
       b.setAttribute('aria-busy', busy ? 'true' : 'false');
     });
@@ -53,9 +57,10 @@
     const isVideo = call.call_type === 'video';
     const name = call.peer_name || 'Akoma match';
     const connected = !!room;
+    const immersive = layer.classList.contains('immersive');
     const incoming = !!call.incoming;
     const outgoing = !incoming && state === 'Calling…';
-    layer.innerHTML = `<section class="ak-call-card ${isVideo ? 'is-video' : ''}" role="dialog" aria-modal="true" aria-label="${isVideo ? 'Video' : 'Voice'} call">
+    layer.innerHTML = `<section class="ak-call-card ${isVideo ? 'is-video' : ''}${isVideo && connected ? ' is-connected' : ''}" role="dialog" aria-modal="true" aria-label="${isVideo ? 'Video' : 'Voice'} call">
       <div class="ak-call-top"><span class="ak-call-brand">AKOMA</span><button type="button" class="ak-call-min" data-call-ui="hide" aria-label="Minimise call">⌄</button></div>
       <div class="ak-remote-video" id="ak-remote-video"></div><div class="ak-self-video" id="ak-self-video"></div>
       <div class="ak-call-avatar">${isVideo ? '▣' : '♡'}</div><h2>${escapeHtml(name)}</h2>
@@ -67,13 +72,28 @@
         ${connected && isVideo ? `<button type="button" data-call-ui="camera" class="ak-call-control">${cameraOff ? 'Camera on' : 'Camera off'}</button>` : ''}
         ${connected ? `<button type="button" data-call-ui="speaker" class="ak-call-control ${speakerOn ? 'selected' : ''}">${speakerOn ? 'Speaker on' : 'Speaker off'}</button><button type="button" class="ak-call-decline" data-call-ui="hangup">End call</button>` : ''}
       </div><p class="ak-call-disclaimer">Calls are not recorded. Use block/report if you feel unsafe.</p>
+      ${isVideo ? `<button type="button" class="ak-call-fs" data-call-ui="fullscreen" aria-pressed="${immersive}" aria-label="${immersive ? 'Exit fullscreen' : 'Fullscreen'}">${immersive ? ICON_EXIT : ICON_FS}</button>` : ''}
+      <button type="button" class="ak-call-max" data-call-ui="maximise" aria-label="Maximise call">${ICON_MAX}</button>
     </section>`;
     layer.classList.add('visible');
-    layer.classList.remove('minimised');
   }
   function closeLayer() {
     const layer = document.getElementById('ak-call-layer');
-    if (layer) { layer.classList.remove('visible', 'minimised'); layer.innerHTML = ''; }
+    if (layer) { layer.classList.remove('visible', 'minimised', 'immersive'); layer.innerHTML = ''; }
+    if (document.fullscreenElement) { try { document.exitFullscreen(); } catch (_) {} }
+  }
+  async function setImmersive(on) {
+    const layer = document.getElementById('ak-call-layer');
+    if (!layer || !active) return;
+    layer.classList.toggle('immersive', on);
+    layer.classList.remove('minimised');
+    // Native fullscreen where supported (not iOS Safari); the CSS mode above works everywhere.
+    try {
+      if (on && !document.fullscreenElement && layer.requestFullscreen) await layer.requestFullscreen();
+      if (!on && document.fullscreenElement) await document.exitFullscreen();
+    } catch (_) {}
+    const b = layer.querySelector('.ak-call-fs');
+    if (b) { b.innerHTML = on ? ICON_EXIT : ICON_FS; b.setAttribute('aria-pressed', String(on)); b.setAttribute('aria-label', on ? 'Exit fullscreen' : 'Fullscreen'); }
   }
   function clockStart() {
     startedAt = Date.now(); clearInterval(timer);
@@ -110,14 +130,22 @@
     room.on(RoomEvent.Reconnected, () => setStatus('Connected'));
     setStatus('Connecting…');
     await room.connect(tokenData.server_url, tokenData.token, { autoSubscribe: true });
+    muted = false; cameraOff = false; speakerOn = true;
+    // Render the connected UI first: paint() rebuilds the DOM and would wipe any video attached earlier.
+    paint(call, 'Connected');
     await room.localParticipant.setMicrophoneEnabled(true);
     if (call.call_type === 'video') {
       await room.localParticipant.setCameraEnabled(true);
       const pub = room.localParticipant.getTrackPublication(Track.Source.Camera);
       if (pub?.track) { const node = pub.track.attach(); const box = document.getElementById('ak-self-video'); if (box) box.appendChild(node); }
+      // Re-attach any remote video that arrived before the UI was repainted.
+      room.remoteParticipants.forEach(part => part.trackPublications.forEach(pub => {
+        if (pub.track && pub.track.kind === Track.Kind.Video) {
+          const target = document.getElementById('ak-remote-video');
+          if (target) { target.innerHTML = ''; target.appendChild(pub.track.attach()); }
+        }
+      }));
     }
-    muted = false; cameraOff = false; speakerOn = true;
-    paint(call, 'Connected');
     applySpeakerState();
     clockStart();
   }
@@ -250,6 +278,8 @@
       if (action === 'decline') return await declineCall();
       if (action === 'block') return await blockCaller();
       if (action === 'hangup') return await hangup();
+      if (action === 'fullscreen') { const layer = document.getElementById('ak-call-layer'); await setImmersive(!layer?.classList.contains('immersive')); return; }
+      if (action === 'maximise') { document.getElementById('ak-call-layer')?.classList.remove('minimised'); return; }
       if (action === 'hide') { document.getElementById('ak-call-layer')?.classList.toggle('minimised'); return; }
       if (action === 'mute' && room) {
         muted = !muted; await room.localParticipant.setMicrophoneEnabled(!muted);
@@ -267,6 +297,11 @@
       console.error('Akoma call control failed:', err);
       setStatus(err?.message || 'That call control could not be applied.');
     }
+  });
+
+  document.addEventListener('fullscreenchange', () => {
+    const layer = document.getElementById('ak-call-layer');
+    if (!document.fullscreenElement && layer?.classList.contains('immersive')) setImmersive(false);
   });
 
   function installSubscription() {
