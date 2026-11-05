@@ -394,8 +394,9 @@ input[type=text],input[type=tel],input[type=number],select.full{font-size:16px;m
 .ak-hero-kicker{display:block;font-size:9px;letter-spacing:.16em;font-weight:850;color:#f3c77e;margin-bottom:4px;}
 .ak-page-hero h1{font-family:var(--f-display);font-size:clamp(21px,6vw,27px);line-height:1.08;letter-spacing:-.035em;margin:0 0 4px;font-weight:800;color:#fff;}
 .ak-page-hero p{font-size:11px;color:rgba(255,255,255,.88);margin:0;}
-.ak-discover-hero{background-color:#1b4140;}
-.ak-timeline-hero:before{background:radial-gradient(ellipse at 82% 10%,rgba(230,160,94,.45),transparent 40%),radial-gradient(ellipse at 12% 30%,rgba(108,112,148,.42),transparent 48%),linear-gradient(115deg,#172b35 0%,#344b50 54%,#5b403d 100%);}
+.ak-discover-hero{background-color:#1b4140;background-image:url("../images/akoma-discover-hero.jpg");}
+.ak-timeline-hero{background-color:#172b35;background-image:url("../images/akoma-timeline-hero.jpg");}
+.ak-page-hero:before{background:linear-gradient(90deg,rgba(10,12,18,.46),rgba(10,12,18,.12) 72%),linear-gradient(180deg,rgba(10,12,18,.06),rgba(10,12,18,.24));}
 .discover-grid-wrap{padding-top:0;}
 .ak-featured-section{margin:0 -12px 20px;padding:13px 12px 0;}
 .ak-section-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin:0 0 10px;}
