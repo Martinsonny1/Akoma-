@@ -322,6 +322,7 @@
     // ---- safety ---------------------------------------------------------------
     async report(r) { await ok(sb.rpc('report_user', { target: r.target, why: r.reason, more: r.details || '', also_block: !!r.block })); },
     async reportContent(r) { await ok(sb.rpc('report_content',{p_target_type:r.type,p_content_id:String(r.contentId),p_reason:r.reason,p_details:r.details||''})); },
+    async submitProblem(r) { const me = await ensureMe(); await ok(sb.from('app_feedback').insert({ reporter_id: me.id, category: String(r.category || 'Something else').slice(0,80), details: String(r.details || '').slice(0,2000), page: String(r.page || '').slice(0,80), app_version: String(r.appVersion || '').slice(0,80) })); },
 
     // ---- timeline ---------------------------------------------------------------
     async feed() {
@@ -389,6 +390,13 @@
         }));
       },
       async setStatus(id, status, note) { await ok(sb.rpc('admin_set_status', { target: id, new_status: status, note: note || null })); },
+      async feedback() {
+        const rows = await ok(sb.from('app_feedback').select('*').order('created_at', { ascending: false }).limit(200));
+        const ids = [...new Set(rows.map((r) => r.reporter_id))];
+        const people = ids.length ? await ok(sb.from('profiles').select('id,name').in('id', ids)) : [];
+        const by = new Map(people.map((p) => [p.id, p]));
+        return rows.map((r) => ({ ...r, reporter: by.get(r.reporter_id) || { name: 'Deleted user' } }));
+      },
       async reports(status) {
         let q = sb.from('reports').select('*').order('created_at', { ascending: false }).limit(100);
         if (status) q = q.eq('status', status);

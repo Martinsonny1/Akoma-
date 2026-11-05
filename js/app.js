@@ -160,8 +160,7 @@
       if (S.loading && !S.profiles.length) return head + loadingBox();
       const eligible = S.profiles.filter((p) => grid || !(p.passed || p.is_match || p.request_sent));
       const featured = eligible.filter((p) => p.featured && !p.passed && !p.is_match && !p.request_sent).slice(0, 10);
-      const featuredIds = new Set(featured.map((p) => p.id));
-      const list = eligible.filter((p) => !featuredIds.has(p.id));
+      const list = eligible; // Featured members remain in the main listing as well as the featured carousel.
       const hero = `<section class="ak-page-hero ak-discover-hero"><div class="ak-page-hero-copy"><span class="ak-hero-kicker">AKOMA · DISCOVER</span><h1>Discover connections.</h1><p>Someone new could change everything.</p></div></section>`;
       const guestPrompt = S.me && S.me.status !== 'approved' ? `<div class="card stack"><div class="row"><span class="badge warn">${S.me.status === 'pending' ? 'Selfie review pending' : 'Guest account'}</span><span class="muted small">Browse freely</span></div><p class="muted small">${S.me.status === 'pending' ? 'Your selfie is being reviewed. Full access unlocks after approval.' : 'Verify with a selfie to unlock likes, messaging and calls.'}</p>${S.me.status !== 'pending' ? fileLabel('pending-selfie', 'Verify with selfie', 'capture="user"') : ''}</div>` : '';
       const featuredRail = featured.length ? `<section class="ak-featured-section"><div class="ak-section-heading"><div><span class="ak-hero-kicker">HANDPICKED FOR YOU</span><h3>Featured profiles</h3></div><span class="ak-rail-hint">Swipe to explore</span></div><div class="ak-featured-rail">${featured.map((p) => `<button class="ak-featured-card" data-act="open" data-id="${p.id}" aria-label="View featured profile ${esc(p.name)}"><span class="ak-featured-photo">${av(p, 150, true)}</span><span class="ak-featured-caption"><b>${esc(p.name)}, ${p.age}</b><span class="ak-featured-meta">${p.activity_label === 'Online now' ? '<i class="ak-presence-dot is-live"></i> Online' : '✦ Featured'}</span></span></button>`).join('')}</div></section>` : '';
@@ -295,6 +294,8 @@
         <button class="btn danger" data-act="submitreport" ${S.busy ? 'disabled' : ''}>Submit report</button></div>`;
     },
 
+    problem: () => `${bar('Report a problem')}<div class="pad stack"><p class="muted">Found a bug or something not working properly? Send the Akoma team a report. Please do not include passwords or private conversations.</p><label class="f">What is the problem? <select id="problem-category"><option>Profiles not loading</option><option>Chats or messages not showing</option><option>Photos or uploads</option><option>Login or account access</option><option>Selfie verification</option><option>Calls or notifications</option><option>Something else</option></select></label><label class="f">Describe what happened<textarea id="problem-details" maxlength=2000 rows=6 placeholder="What did you tap, what did you expect, and what happened instead?"></textarea></label><p class="muted small">We will attach your app version and the page you were using. Do not include passwords, ID documents or sensitive personal information.</p><button class="btn primary" data-act="submitproblem" ${S.busy ? 'disabled' : ''}>Send problem report</button></div>`,
+
     tips: () => `${bar('Stay safe')}<div class="pad"><div class="banner">${ic.warn}<span>Romance scams are the biggest risk on any dating app. These rules protect you.</span></div><div class="list">
       ${[['Never send money, airtime or gifts', 'Not for emergencies, school fees, customs fees or investments. Report anyone who asks.'], ['Meet in a public place first', 'Tell a friend where you are going and share your live location.'], ['Keep chatting on Akoma at first', 'Move to WhatsApp only when you feel comfortable.'], ['Check the verified badge', 'A badge means the member completed Akoma selfie review. It is not proof of legal identity or a guarantee of character.'], ['Trust your instincts', 'If someone rushes you, pressures you or avoids a call, step back and report.']]
         .map((t) => `<div class="stack" style="padding:12px 0;gap:4px"><b>${t[0]}</b><p class="muted small">${t[1]}</p></div>`).join('')}</div></div>`,
@@ -302,8 +303,9 @@
     me: () => {
       const m = S.me;
       return `${bar('My profile')}<div class="pad"><div class="row" style="gap:16px">${av({ id: m.id, name: m.name, photos: m.photos, photo_hidden: false }, 76)}
-        <div class="grow"><h3 style="font-size:22px">${esc(m.name)}, ${m.age}</h3><p class="muted small">${esc(m.city)}</p><div style="margin-top:6px">${vb()}</div></div></div>
+        <div class="grow"><h3 style="font-size:22px">${esc(m.name)}, ${m.age}</h3><p class="muted small">${esc(m.city)}</p><div style="margin-top:6px">${m.status === 'approved' ? vb() : `<span class="badge warn">${m.status === 'pending' ? 'Selfie pending' : 'Guest'}</span>`}</div></div></div>
         ${m.bio ? `<p>${esc(m.bio)}</p>` : ''}
+        ${m.status !== 'approved' ? `<div class="card stack"><div class="row wrap"><b>${m.status === 'pending' ? 'Selfie verification pending' : 'Guest account'}</b><span class="badge warn">${m.status === 'pending' ? 'Under review' : 'Restricted access'}</span></div><p class="muted small">${m.status === 'pending' ? 'Your selfie is awaiting review. Full access will unlock when it is approved.' : 'You can browse as a guest. Submit a selfie whenever you are ready to unlock full access.'}</p>${m.status === 'guest' ? fileLabel('pending-selfie', 'Verify with selfie', 'capture="user"') : ''}</div>` : ''}
         ${isM() ? `<div class="subcard free-access"><div class="row" style="justify-content:space-between"><h3>Akoma access</h3><span class="badge good">Free</span></div>
           <p class="small">All members can discover profiles, send message requests and chat without subscriptions or hidden charges.</p></div>` : ''}
         <div class="list"><button class="item" data-go="edit"><span class="grow"><b>Edit profile and photos</b></span></button>
@@ -311,7 +313,8 @@
           <div class="card stack"><div class="row" style="justify-content:space-between"><b>Looking Tonight</b><span class="badge tonight-badge">✦ Beacon</span></div><p class="muted small">Let people in your city know you're open to chatting or meeting. This turns off automatically.</p>${m.looking_tonight_until&&new Date(m.looking_tonight_until)>new Date()?`<p class="small">Active until ${new Date(m.looking_tonight_until).toLocaleTimeString([], {hour:'2-digit',minute:'2-digit'})}</p>`:''}<label class="f">I'm open to<select id="tonight-mode"><option value="either"${m.looking_tonight_mode==='either'?' selected':''}>Chatting or meeting</option><option value="chat"${m.looking_tonight_mode==='chat'?' selected':''}>Chatting</option><option value="meet"${m.looking_tonight_mode==='meet'?' selected':''}>Meeting</option></select></label><label class="f">Duration<select id="tonight-hours"><option value="4">4 hours</option><option value="6">6 hours</option></select></label><button class="btn primary" data-act="tonight-on">${m.looking_tonight_until&&new Date(m.looking_tonight_until)>new Date()?'Renew Looking Tonight':'Activate Looking Tonight'}</button><button class="btn ghost" data-act="tonight-off">Turn off beacon</button></div>
           <button class="item" data-go="settings"><span class="grow"><b>Settings and privacy</b></span></button>
           <button class="item" data-go="tips"><span class="grow"><b>Safety tips</b></span></button>
-          <button class="item" data-go="help"><span class="grow"><b>Help and contact</b></span></button></div></div>`;
+          <button class="item" data-go="help"><span class="grow"><b>Help and contact</b></span></button>
+          <button class="item" data-go="problem"><span class="grow"><b>Report a problem</b><span class="muted small" style="display:block">Tell us about bugs or technical issues</span></span><span>›</span></button></div></div>`;
     },
 
     edit: () => {
@@ -333,7 +336,7 @@
       const soundPrefs = window.AkomaSounds ? window.AkomaSounds.preferences() : { calls: true, messages: true, matches: true, ringtone: 'classic' };
       const soundToggle = (key, title, sub) => `<button class="toggle" role="switch" aria-checked="${!!soundPrefs[key]}" data-act="soundtoggle" data-id="${key}"><span><b>${title}</b><span class="muted small" style="display:block">${sub}</span></span><span class="sw"></span></button>`;
       const tg = (k, title, sub) => `<button class="toggle" role="switch" aria-checked="${!!m[k]}" data-act="set" data-id="${k}"><span><b>${title}</b>${sub ? `<span class="muted small" style="display:block">${sub}</span>` : ''}</span><span class="sw"></span></button>`;
-      return `${bar('Settings')}<div class="pad"><div class="list">
+      return `${bar('Settings')}<div class="pad">${m.status === 'guest' ? `<div class="card stack"><b>Unlock your full Akoma account</b><p class="muted small">You can complete selfie verification at any time. No ID is required.</p>${fileLabel('pending-selfie', 'Verify with selfie', 'capture="user"')}</div>` : ''}<div class="list">
         ${isW() ? tg('hide_photo', 'Hide my profile photo', 'Only people you match with can see it') : ''}
         ${tg('hide_from_contacts', 'Hide me from my phone contacts')}${tg('notifications', 'Notifications')}<button class="toggle" data-act="pushenable"><span><b>Enable push alerts</b><span class="muted small" style="display:block">Receive alerts when Akoma is not open (once push delivery is configured)</span></span><span class="sw"></span></button>
         <div class="card stack" style="margin:12px 0">
@@ -348,6 +351,7 @@
           </select></label>
           <button class="btn sm ghost" data-act="soundpreview">Preview ringtone</button>
         </div>
+        <button class="item" data-go="problem"><span class="grow"><b>Report a problem</b><span class="muted small" style="display:block">Report a bug or something that is not working</span></span><span>›</span></button>
         ${tg('online_visible', 'Show my online status', 'Optional and equal for men and women. When off, you also cannot see other members’ activity.')}
         ${!DEMO ? `<button class="toggle" role="switch" aria-checked="${S.allowIncomingCalls}" data-act="callsetting"><span><b>Allow incoming calls</b><span class="muted small" style="display:block">Turn off voice and video call invitations</span></span><span class="sw"></span></button>` : ''}
         <div class="card stack"><b>Nearby users</b><p class="muted small">Optional. If you enable this, Akoma stores an approximate location rounded to about 500 metres. Other members never receive your coordinates or see a map—only a broad distance band, and only when both of you enable nearby sharing. This setting works the same for men and women.</p>
@@ -753,6 +757,13 @@
         if (U.hasContact(t) || U.hasMoney(t)) { S.draft.err = 'Posts cannot include contact details or ask for money, airtime or gifts.'; return render(); }
         S.draft.err = '';
         return guard(async () => { await API.createPost({ body: t, blob: S.draft.blob }); const had = !!S.draft.blob; S.draft = { text: '', blob: null, preview: null, err: '' }; S.feed = await API.feed(); toast(had ? 'Posted. A moderator will review your photo first.' : 'Posted to the timeline'); });
+      }
+
+      case 'submitproblem': {
+        const category = ($('#problem-category') || {}).value || 'Something else';
+        const details = ((($('#problem-details') || {}).value) || '').trim();
+        if (details.length < 10) { toast('Please describe the problem in a little more detail.'); return; }
+        return guard(async () => { await API.submitProblem({ category, details, page: S.screen, appVersion: 'akoma-guest-selfie-v2' }); toast('Thank you. Your problem report has been sent.'); await go('settings', { reset: true }); });
       }
 
       // safety

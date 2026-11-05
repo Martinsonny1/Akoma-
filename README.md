@@ -114,3 +114,7 @@ See [PRIORITY_FEATURES_SETUP.md](PRIORITY_FEATURES_SETUP.md) for the required Su
 ## Guest browsing and selfie verification update
 
 For the guest-first onboarding update, deploy the latest app files and run `supabase/guest_selfie_verification_migration.sql` in Supabase SQL Editor after the existing migrations. Read `AKOMA_GUEST_SELFIE_UPDATE.md` for the deployment order, behavior changes, and test checklist. New accounts begin as guests; guests can browse Discover and read Timeline but cannot initiate interactions until selfie review is approved. Selfie review is manual and is not legal identity or age verification.
+
+
+### Guest verification and software problem reports
+Run `supabase/app_feedback_migration.sql` once in the Supabase SQL Editor to enable in-app technical problem reports and the admin Problem reports tab. Featured profiles are displayed both in the featured carousel and in the main Discover listing. Guest members can start selfie verification from My Profile or Settings at any time.

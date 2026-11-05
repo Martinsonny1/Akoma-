@@ -29,3 +29,11 @@ The existing Supabase project, authentication, profile/photo storage, chat, matc
 2. Deploy the full contents of this ZIP to the same hosting project and root directory.
 3. Open Akoma on the phone while online and refresh/reopen it to receive the updated service worker.
 4. Test with a new test account: skip selfie, browse Discover and Timeline, confirm interactions are blocked; then submit a selfie, approve it in Admin, and confirm full access unlocks.
+
+
+## Featured profiles and problem reports (follow-up)
+- Featured members remain in the normal Discover grid and are also shown in the Featured carousel.
+- Guest accounts have a persistent selfie-verification entry on My Profile and Settings, so they can submit a selfie whenever they choose. Pending accounts see their review status.
+- Added a Report a problem form in My Profile and Settings. Reports are saved separately from member safety reports in `app_feedback`.
+- Admin dashboard has a new Problem reports tab.
+- Run `supabase/app_feedback_migration.sql` once in Supabase SQL Editor before using the report form in production. This is an additive migration and does not modify existing profiles, chats or messages.

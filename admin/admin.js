@@ -17,7 +17,7 @@
     app.innerHTML = `<div class="login"><div class="brandmark">♥</div><h1>Akoma Admin</h1><p class="err">The dashboard encountered an error: ${esc(message)}</p><p class="muted small">Refresh the page. If the problem continues, send a screenshot of this message.</p></div>`;
   });
   const DEMO = API.mode === 'demo';
-  const TABS = [['overview', 'Overview'], ['queue', 'Verification'], ['content', 'Content review'], ['reports', 'Reports'], ['posts', 'Posts'], ['users', 'Users'], ['payments', 'Payments'], ['waitlist', 'Waitlist']];
+  const TABS = [['overview', 'Overview'], ['queue', 'Verification'], ['content', 'Content review'], ['reports', 'Reports'], ['feedback', 'Problem reports'], ['posts', 'Posts'], ['users', 'Users'], ['payments', 'Payments'], ['waitlist', 'Waitlist']];
   const REJECT = ['Selfie is unclear', 'Face could not be checked', 'Profile photos need review', 'Profile looks fake', 'Possible under-18 account', 'Other'];
   const GOAL = 100;
   const S = { me: null, tab: 'overview', stats: null, data: {}, q: '', busy: false, email: '', toast: '' };
@@ -107,6 +107,12 @@
         ${r.status === 'open' ? `<div class="actions"><button class="btn danger" data-act="banreport" data-id="${r.id}" data-user="${r.reported.id}">Ban ${esc(r.reported.name)}</button><button class="btn" data-act="dismiss" data-id="${r.id}">Dismiss report</button></div>` : ''}</div>`).join('');
     },
 
+    feedback() {
+      const rows = S.data.feedback; if (!rows) return '<div class="empty">Loading problem reports…</div>';
+      if (!rows.length) return '<div class="empty">No software problem reports yet.</div>';
+      return rows.map((r) => `<div class="case"><div class="case-head"><h3>${esc(r.category)}</h3><span class="badge ${r.status === 'open' ? 'warn' : ''}">${esc(r.status)}</span><span class="muted small">${date(r.created_at)}</span></div><p class="small muted">From ${esc(r.reporter && r.reporter.name || 'Akoma member')} · Page: ${esc(r.page || 'Unknown')} · Version: ${esc(r.app_version || 'Unknown')}</p><p>${esc(r.details)}</p></div>`).join('');
+    },
+
     posts() {
       const rows = S.data.posts; if (!rows) return '<div class="empty">Loading…</div>';
       if (!rows.length) return '<div class="empty">No photos are waiting for review.</div>';
@@ -164,6 +170,7 @@
     queue: async () => { S.data.queue = await A.queue(); },
     content: async () => { S.data.content = await A.contentQueue(); },
     reports: async () => { S.data.reports = await A.reports(); S.data.rfilter = S.data.rfilter || 'open'; },
+    feedback: async () => { S.data.feedback = await A.feedback(); },
     posts: async () => { S.data.posts = await A.posts(); },
     users: async () => { S.data.users = await A.users(S.q); },
     payments: async () => { S.data.payments = await A.payments(); },

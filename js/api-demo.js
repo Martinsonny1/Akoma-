@@ -353,6 +353,7 @@
     async unmatch(matchId) { const x = db.matches.find((y) => y.id === matchId); if (x) x.status = 'ended'; save(); },
 
     // ---- safety ---------------------------------------------------------------
+    async submitProblem(r) { await wait(); const me = need(); db.feedback = db.feedback || []; db.feedback.push({ id: 'fb' + rid(), reporter_id: me.id, category: String(r.category || 'Something else'), details: String(r.details || '').slice(0,2000), page: String(r.page || ''), app_version: String(r.appVersion || ''), status: 'open', created_at: now() }); save(); },
     async reportContent(r) {
       await wait(); const me=need();
       db.reports.push({id:'rp'+rid(),reporter_id:me.id,reported_id:r.target,reason:r.reason,details:(`Reported ${r.type} ${r.contentId}. `+(r.details||'')).slice(0,500),status:'open',created_at:now()}); save();
@@ -461,6 +462,7 @@
         if (status === 'banned') db.matches.forEach((m) => { if (m.status === 'active' && (m.woman_id === id || m.man_id === id)) m.status = 'ended'; });
         save();
       },
+      async feedback() { needAdmin(); return (db.feedback || []).slice().sort(byNew).map((r) => Object.assign({}, r, { reporter: briefUser(r.reporter_id) })); },
       async reports(status) {
         needAdmin();
         return db.reports.filter((r) => !status || r.status === status).sort(byNew).map((r) => ({
