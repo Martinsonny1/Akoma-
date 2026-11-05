@@ -1,4 +1,4 @@
-# Deploy Akoma's private media Edge Function
+# Deploy Meet GH's private media Edge Function
 
 The app's private chat media and Vault previews use this function so each response can carry `Cache-Control: private, no-store` and so close-to-destroy media is removed through the Supabase Storage API.
 

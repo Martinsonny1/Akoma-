@@ -194,7 +194,7 @@ Deno.serve(async (req) => {
       return json({ deleted: true });
     } catch (e) {
       const detail = e instanceof Error ? e.message : String(e);
-      console.error('AKOMA DELETE ACCOUNT ERROR:', detail);
+      console.error('MEET GH DELETE ACCOUNT ERROR:', detail);
       return json({ error: 'delete_failed', detail }, 500);
     }
   }

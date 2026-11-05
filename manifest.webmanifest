@@ -1,16 +1,31 @@
 {
-  "name": "Akoma",
-  "short_name": "Akoma",
-  "description": "Private, verified dating for women who want someone with energy.",
+  "name": "Meet GH",
+  "short_name": "Meet GH",
+  "description": "Meet people, build connections and chat with adults in Ghana.",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
   "orientation": "any",
-  "background_color": "#0F4C4F",
-  "theme_color": "#0F4C4F",
+  "background_color": "#430012",
+  "theme_color": "#7A001E",
   "icons": [
-    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
-    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+    {
+      "src": "icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
   ]
 }

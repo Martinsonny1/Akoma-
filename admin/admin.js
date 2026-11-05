@@ -1,4 +1,4 @@
-// Akoma admin dashboard: verification queue, reports, posts, users, payments, waitlist.
+// Meet GH admin dashboard: verification queue, reports, posts, users, payments, waitlist.
 (function () {
   'use strict';
   const U = window.AkomaUtil, API = window.API;
@@ -6,7 +6,7 @@
   const $ = (s) => document.querySelector(s);
   // Show a useful message instead of leaving a blank page when a dependency is missing.
   if (!U || !API || !API.admin) {
-    if (app) app.innerHTML = '<div class="login"><div class="brandmark">♥</div><h1>Akoma Admin</h1><p class="err">The dashboard scripts did not load correctly. Please upload the complete Akoma folder, keeping the js, css and admin folders together, then refresh this page.</p><p class="muted small">If you opened this page from a file preview, publish it to a web host and open its HTTPS URL.</p></div>';
+    if (app) app.innerHTML = '<div class="login"><div class="brandmark">♥</div><h1>Meet GH Admin</h1><p class="err">The dashboard scripts did not load correctly. Please upload the complete Meet GH folder, keeping the js, css and admin folders together, then refresh this page.</p><p class="muted small">If you opened this page from a file preview, publish it to a web host and open its HTTPS URL.</p></div>';
     return;
   }
   const A = API.admin;
@@ -14,7 +14,7 @@
   window.addEventListener('error', (event) => {
     if (!app) return;
     const message = event && event.message ? event.message : 'Unknown JavaScript error';
-    app.innerHTML = `<div class="login"><div class="brandmark">♥</div><h1>Akoma Admin</h1><p class="err">The dashboard encountered an error: ${esc(message)}</p><p class="muted small">Refresh the page. If the problem continues, send a screenshot of this message.</p></div>`;
+    app.innerHTML = `<div class="login"><div class="brandmark">♥</div><h1>Meet GH Admin</h1><p class="err">The dashboard encountered an error: ${esc(message)}</p><p class="muted small">Refresh the page. If the problem continues, send a screenshot of this message.</p></div>`;
   });
   const DEMO = API.mode === 'demo';
   const TABS = [['overview', 'Overview'], ['queue', 'Verification'], ['content', 'Content review'], ['reports', 'Reports'], ['feedback', 'Problem reports'], ['posts', 'Posts'], ['users', 'Users'], ['payments', 'Payments'], ['waitlist', 'Waitlist']];
@@ -32,7 +32,7 @@
   function loginView() {
     return `<div class="login">
       <div class="brandmark" aria-hidden="true">♥</div>
-      <h1>Akoma Admin</h1>
+      <h1>Meet GH Admin</h1>
       <p class="muted">Sign in with the email address and password of your approved admin account.</p>
       <form id="admin-login" novalidate>
         <label class="f">Email address<input id="admin-email" type="email" autocomplete="username" inputmode="email" placeholder="admin@example.com" value="${esc(S.email)}" required></label>
@@ -49,7 +49,7 @@
   function header() {
     const st = S.stats || {};
     const badge = { queue: st.pending, content: st.pendingContent, reports: st.openReports, posts: st.pendingPosts };
-    return `<div class="top"><div class="top-in"><div class="top-row"><h1>Akoma Admin</h1><div class="row"><span class="small">${esc(S.me.name)}</span><button class="link" data-act="signout">Sign out</button></div></div>
+    return `<div class="top"><div class="top-in"><div class="top-row"><h1>Meet GH Admin</h1><div class="row"><span class="small">${esc(S.me.name)}</span><button class="link" data-act="signout">Sign out</button></div></div>
       <div class="tabs" role="tablist">${TABS.map((t) => `<button role="tab" aria-selected="${S.tab === t[0]}" data-tab="${t[0]}">${t[1]}${badge[t[0]] ? `<span class="count">${badge[t[0]]}</span>` : ''}</button>`).join('')}</div></div></div>`;
   }
 
@@ -110,7 +110,7 @@
     feedback() {
       const rows = S.data.feedback; if (!rows) return '<div class="empty">Loading problem reports…</div>';
       if (!rows.length) return '<div class="empty">No software problem reports yet.</div>';
-      return rows.map((r) => `<div class="case"><div class="case-head"><h3>${esc(r.category)}</h3><span class="badge ${r.status === 'open' ? 'warn' : ''}">${esc(r.status)}</span><span class="muted small">${date(r.created_at)}</span></div><p class="small muted">From ${esc(r.reporter && r.reporter.name || 'Akoma member')} · Page: ${esc(r.page || 'Unknown')} · Version: ${esc(r.app_version || 'Unknown')}</p><p>${esc(r.details)}</p></div>`).join('');
+      return rows.map((r) => `<div class="case"><div class="case-head"><h3>${esc(r.category)}</h3><span class="badge ${r.status === 'open' ? 'warn' : ''}">${esc(r.status)}</span><span class="muted small">${date(r.created_at)}</span></div><p class="small muted">From ${esc(r.reporter && r.reporter.name || 'Meet GH member')} · Page: ${esc(r.page || 'Unknown')} · Version: ${esc(r.app_version || 'Unknown')}</p><p>${esc(r.details)}</p></div>`).join('');
     },
 
     posts() {
@@ -281,6 +281,6 @@
   (async function start() {
     $('#demo').hidden = !DEMO;
     try { await API.init(); if (API.session()) await afterLogin(); else render(); }
-    catch (e) { app.innerHTML = `<div class="login"><h1>Akoma Admin</h1><p class="err">Could not start: ${esc(U.friendly(e))}</p></div>`; }
+    catch (e) { app.innerHTML = `<div class="login"><h1>Meet GH Admin</h1><p class="err">Could not start: ${esc(U.friendly(e))}</p></div>`; }
   })();
 })();

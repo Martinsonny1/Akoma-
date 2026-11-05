@@ -1,4 +1,4 @@
-AKOMA HERO IMAGES
+MEET GH HERO IMAGES
 
 Place your own JPG images in this folder using these exact filenames:
 - akoma-discover-hero.jpg (Discover page)

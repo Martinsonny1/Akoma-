@@ -1,11 +1,11 @@
-# Akoma — static web application
+# Meet GH — static web application
 
-Akoma is a browser-based dating and social application for adults in Ghana. It uses plain HTML, CSS and JavaScript. There is no Node.js, Python, build step or app installation required for visitors.
+Meet GH is a browser-based dating and social application for adults in Ghana. It uses plain HTML, CSS and JavaScript. There is no Node.js, Python, build step or app installation required for visitors.
 
 ## Deploy the public app
 
-1. Open the extracted Akoma folder. Its root `index.html` is the application entry point.
-2. Upload the **contents** of the extracted Akoma folder to a static HTTPS host such as Netlify Drop, Cloudflare Pages, Vercel (static deployment), or GitHub Pages. Do not upload the parent folder as an extra nested directory.
+1. Open the extracted Meet GH folder. Its root `index.html` is the application entry point.
+2. Upload the **contents** of the extracted Meet GH folder to a static HTTPS host such as Netlify Drop, Cloudflare Pages, Vercel (static deployment), or GitHub Pages. Do not upload the parent folder as an extra nested directory.
 3. Open the resulting HTTPS URL on any phone, tablet or computer.
 4. To install it like an app on a supported phone, use the browser's **Add to Home Screen** option. This is optional.
 
@@ -22,7 +22,7 @@ Visitors do not install Python, Node.js or anything else. The local development 
 
 ## Free for every member
 
-Akoma's member experience is free: no subscriptions, premium tiers, paid boosts, pay-per-message or daily message-request cap. The app's safety and moderation rules still apply. Payment integration is disabled.
+Meet GH's member experience is free: no subscriptions, premium tiers, paid boosts, pay-per-message or daily message-request cap. The app's safety and moderation rules still apply. Payment integration is disabled.
 
 ## Pages
 
@@ -35,7 +35,7 @@ Akoma's member experience is free: no subscriptions, premium tiers, paid boosts,
 
 - The live Supabase integration must be tested against your own project; packaging does not verify your database configuration.
 - Protect all admin operations with database-side role checks and Row Level Security. Never rely on hiding admin buttons in JavaScript.
-- Akoma handles sensitive profile photos and identity documents. Complete a privacy policy, terms, retention/deletion procedure and Data Protection Commission obligations before onboarding real members.
+- Meet GH handles sensitive profile photos and identity documents. Complete a privacy policy, terms, retention/deletion procedure and Data Protection Commission obligations before onboarding real members.
 - Manual verification requires a trusted moderation team. Restrict access to government-issued ID images and delete them when no longer needed.
 - HTTPS is required for service workers, camera access and installable PWA behaviour.
 
@@ -97,14 +97,14 @@ For deployment of the `media-lifecycle` Edge Function and the scheduled cleanup 
 
 ## Voice and video calls (LiveKit)
 
-This build includes one-to-one LiveKit voice/video calls inside matched chats and a call-history view. Run `supabase/calls_migration.sql` after the existing Akoma migrations, add `LIVEKIT_URL`, `LIVEKIT_API_KEY` and `LIVEKIT_API_SECRET` as Supabase Edge Function secrets, and deploy `supabase/functions/livekit-call/index.ts` as `livekit-call`. Follow the complete no-command-line instructions in `SUPABASE_SETUP_GUIDE.md`. Never place the LiveKit API secret or Supabase service-role key in browser code.
+This build includes one-to-one LiveKit voice/video calls inside matched chats and a call-history view. Run `supabase/calls_migration.sql` after the existing Meet GH migrations, add `LIVEKIT_URL`, `LIVEKIT_API_KEY` and `LIVEKIT_API_SECRET` as Supabase Edge Function secrets, and deploy `supabase/functions/livekit-call/index.ts` as `livekit-call`. Follow the complete no-command-line instructions in `SUPABASE_SETUP_GUIDE.md`. Never place the LiveKit API secret or Supabase service-role key in browser code.
 
 Calls have no app-imposed duration cap, but LiveKit usage, network availability and plan limits still apply. Incoming call ringing in this build requires the app page to be open; closed-browser/native push calling is not included. Calls are not recorded.
 
 
 ## Updated identity verification and pending access
 
-New registrations submit a government-issued ID (Ghana Card accepted) for manual review. Pending and rejected accounts remain in a restricted verification hub: they can check status, replace/resubmit an ID, and preview descriptions of Akoma features, but they cannot browse real member profiles or use matching, messaging, calls, nearby, or Vault features. Run `supabase/verification_progressive_migration.sql` in Supabase SQL Editor after the existing migrations; this prevents admin approval when no government ID has been submitted. The app checks approval automatically every 30 seconds while the verification screen is open. The review target shown to users is an aim, not a guarantee or automatic approval. Admins should review the queue promptly and only approve after checking the ID and profile. Existing schema columns `selfie_path` and `id_card_path` are retained for compatibility; the updated flow uses `id_card_path` for all new submissions.
+New registrations submit a government-issued ID (Ghana Card accepted) for manual review. Pending and rejected accounts remain in a restricted verification hub: they can check status, replace/resubmit an ID, and preview descriptions of Meet GH features, but they cannot browse real member profiles or use matching, messaging, calls, nearby, or Vault features. Run `supabase/verification_progressive_migration.sql` in Supabase SQL Editor after the existing migrations; this prevents admin approval when no government ID has been submitted. The app checks approval automatically every 30 seconds while the verification screen is open. The review target shown to users is an aim, not a guarantee or automatic approval. Admins should review the queue promptly and only approve after checking the ID and profile. Existing schema columns `selfie_path` and `id_card_path` are retained for compatibility; the updated flow uses `id_card_path` for all new submissions.
 
 
 ## Latest safety and privacy update

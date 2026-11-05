@@ -1,4 +1,4 @@
-// Akoma member app. Talks only to window.API (demo or Supabase).
+// Meet GH member app. Talks only to window.API (demo or Supabase).
 (function () {
   'use strict';
   const U = window.AkomaUtil, API = window.API, C = window.AKOMA_CONFIG || {};
@@ -66,14 +66,14 @@
   const SCREENS = {
     boot: () => loadingBox(),
 
-    welcome: () => `<div class="splash"><div class="mark">${ic.heart}</div><div><h1>Akoma</h1></div>
+    welcome: () => `<div class="splash"><div class="mark brand-mark"><img src="images/meet-gh-brand.jpg" alt="Meet GH" /></div><div><h1>Meet GH</h1></div>
       <p>Meet someone with energy. Browse freely. Verify by selfie when you're ready.</p>
       <div class="stack"><button class="btn primary" data-go="phone">Get started</button>
       ${DEMO ? `<button class="btn ghost" data-act="demo" data-id="woman">Try the demo as Efua (a woman)</button><button class="btn ghost" data-act="demo" data-id="man">Try the demo as Kofi (a man)</button>` : ''}</div>
       <small>For adults aged 18 and over.</small>
       ${DEMO ? '<small>Demo links: <a style="color:inherit" href="admin/index.html" target="_blank" rel="noopener">Admin dashboard</a> · <a style="color:inherit" href="landing.html" target="_blank" rel="noopener">Waitlist page</a></small>' : ''}</div>`,
 
-    phone: () => `${bar('Join Akoma')}<div class="pad">
+    phone: () => `${bar('Join Meet GH')}<div class="pad">
         <p class="muted">Create a free account with your email address, or sign in if you already have one. No phone number or SMS provider is required.</p>
         <div class="tags" style="gap:8px">
           <button class="chip" aria-pressed="${S.authMode === 'signup'}" data-act="authmode" data-id="signup">Create account</button>
@@ -97,12 +97,12 @@
 
     selfie: () => {
       const o = S.onb;
-      return `${bar('Selfie verification')}<div class="pad"><p class="muted">A selfie lets our moderators compare your current face with your profile photos. No government ID is required. You can skip this and explore Akoma as a guest.</p>
+      return `${bar('Selfie verification')}<div class="pad"><p class="muted">A selfie lets our moderators compare your current face with your profile photos. No government ID is required. You can skip this and explore Meet GH as a guest.</p>
       <div class="card stack"><b>Optional live selfie</b>
         ${o.selfie ? `<img src="${o.selfie.preview}" alt="Selfie preview" style="border-radius:12px;max-height:220px;object-fit:contain">` : `<div class="camera"><div>${ic.cam}Take a clear selfie with your face visible</div></div>`}
         <div class="row" style="justify-content:center">${fileLabel('selfie', o.selfie ? 'Replace selfie' : 'Take or upload selfie', 'capture="user"')}</div>
       </div>
-      <p class="muted small">Your selfie is private and reviewed by authorized Akoma moderators. A selfie check is not government identity verification or proof of age; Akoma remains for adults aged 18+.</p>
+      <p class="muted small">Your selfie is private and reviewed by authorized Meet GH moderators. A selfie check is not government identity verification or proof of age; Meet GH remains for adults aged 18+.</p>
       <button class="btn primary" data-go="terms">${o.selfie ? 'Continue with selfie' : 'Continue'}</button>
       <button class="btn ghost" data-act="skipselife">Skip for now — browse as guest</button></div>`;
     },
@@ -138,16 +138,16 @@
     status: () => {
       const m = S.me, pending = m.status === 'pending';
       if (m.status === 'banned') return `${bar('Account suspended', { noback: true })}<div class="pad"><div class="banner">${ic.warn}<span>This account was removed for breaking the community rules. Contact support if you think this is a mistake.</span></div><button class="btn ghost" data-act="signout">Sign out</button></div>`;
-      return `${bar('Welcome to Akoma', { noback: true, right: meBtn() })}<div class="pad">
+      return `${bar('Welcome to Meet GH', { noback: true, right: meBtn() })}<div class="pad">
         <div class="card stack" style="text-align:center;align-items:center;padding:24px 18px">
           <div class="mark" style="width:54px;height:54px">${ic.heart}</div>
           <h2 style="margin:0">${pending ? 'Your selfie is being reviewed' : 'You are browsing as a guest'}${m.name ? ', ' + esc(m.name) : ''} ❤️</h2>
           <span class="badge ${pending ? 'warn' : 'good'}">${pending ? 'Pending selfie review' : 'Guest account'}</span>
-          <p class="muted">${pending ? 'You can keep exploring Discover and Timeline. Messaging, matching and calls unlock after approval.' : 'Explore profiles and community posts. Verify with a selfie whenever you are ready to unlock the full Akoma experience.'}</p>
+          <p class="muted">${pending ? 'You can keep exploring Discover and Timeline. Messaging, matching and calls unlock after approval.' : 'Explore profiles and community posts. Verify with a selfie whenever you are ready to unlock the full Meet GH experience.'}</p>
         </div>
         <div class="card stack"><b>Your access</b><div class="row"><span>${ic.heart}</span><span>Browse Discover and Timeline</span><span class="badge good">Available</span></div><div class="row"><span>${ic.t_chat}</span><span>Likes, requests and chats</span><span class="badge warn">After approval</span></div><div class="row"><span>${ic.cam}</span><span>Voice and video calls</span><span class="badge warn">After approval</span></div></div>
         ${!pending ? `<div class="card stack"><b>Unlock full access</b><p class="muted small">Submit a selfie for private moderator review. No ID document is needed.</p>${fileLabel('pending-selfie', 'Take or upload selfie', 'capture="user"')}</div>` : `<p class="muted small">We'll check for approval automatically while this screen is open.</p>`}
-        <button class="btn primary" data-act="browse">${pending ? 'Continue browsing' : 'Explore Akoma'}</button>
+        <button class="btn primary" data-act="browse">${pending ? 'Continue browsing' : 'Explore Meet GH'}</button>
         <button class="btn ghost" data-act="signout">Sign out</button></div>`;
     },
 
@@ -161,7 +161,7 @@
       const eligible = S.profiles.filter((p) => grid || !(p.passed || p.is_match || p.request_sent));
       const featured = S.profiles.filter((p) => p.featured === true || p.featured === 'true' || p.is_featured === true).slice(0, 10);
       const list = eligible; // Featured members remain in the main listing as well as the featured carousel.
-      const hero = `<section class="ak-page-hero ak-discover-hero"><div class="ak-page-hero-copy"><span class="ak-hero-kicker">AKOMA · DISCOVER</span><h1>Discover connections.</h1><p>Someone new could change everything.</p></div></section>`;
+      const hero = `<section class="ak-page-hero ak-discover-hero"><div class="ak-page-hero-copy"><span class="ak-hero-kicker">MEET GH · DISCOVER</span><h1>Discover connections.</h1><p>Someone new could change everything.</p></div></section>`;
       const guestPrompt = S.me && S.me.status !== 'approved' ? `<div class="card stack"><div class="row"><span class="badge warn">${S.me.status === 'pending' ? 'Selfie review pending' : 'Guest account'}</span><span class="muted small">Browse freely</span></div><p class="muted small">${S.me.status === 'pending' ? 'Your selfie is being reviewed. Full access unlocks after approval.' : 'Verify with a selfie to unlock likes, messaging and calls.'}</p>${S.me.status !== 'pending' ? fileLabel('pending-selfie', 'Verify with selfie', 'capture="user"') : ''}</div>` : '';
       const featuredRail = featured.length ? `<section class="ak-featured-section"><div class="ak-section-heading"><div><span class="ak-hero-kicker">HANDPICKED FOR YOU</span><h3>Featured profiles</h3></div><span class="ak-rail-hint">Swipe to explore</span></div><div class="ak-featured-rail">${featured.map((p) => `<button class="ak-featured-card" data-act="open" data-id="${p.id}" aria-label="View featured profile ${esc(p.name)}"><span class="ak-featured-photo">${av(p, 150, true)}</span><span class="ak-featured-caption"><b>${esc(p.name)}, ${p.age}</b><span class="ak-featured-meta">${p.activity_label === 'Online now' ? '<i class="ak-presence-dot is-live"></i> Online' : '✦ Featured'}</span></span></button>`).join('')}</div></section>` : '';
       if (!list.length) return `${head}${hero}<div class="discover-grid-wrap">${featuredRail}${guestPrompt}<div class="card stack"><b>No one new right now</b><p class="muted">Widen your filters or check back later. New verified people are added daily.</p><button class="btn sm" data-go="filters">Change filters</button></div></div>`;
@@ -204,7 +204,7 @@
           ${p.body ? `<p>${esc(p.body)}</p>` : ''}${img}
           <div class="row">${S.me && S.me.status === 'approved' ? `<button class="chip" aria-pressed="${p.liked}" data-act="plike" data-id="${p.id}">${ic.heart.replace('<svg', '<svg style="width:14px;height:14px;vertical-align:-2px;margin-right:5px"')}${p.likes}</button>` : `<span class="chip">${ic.heart} ${p.likes}</span>`}</div></div>`;
       }).join('');
-      const timelineHero = `<section class="ak-page-hero ak-timeline-hero"><div class="ak-page-hero-copy"><span class="ak-hero-kicker">AKOMA · COMMUNITY</span><h1>Moments on Akoma.</h1><p>Little moments. Real connections.</p></div></section>`;
+      const timelineHero = `<section class="ak-page-hero ak-timeline-hero"><div class="ak-page-hero-copy"><span class="ak-hero-kicker">MEET GH · COMMUNITY</span><h1>Moments on Meet GH.</h1><p>Little moments. Real connections.</p></div></section>`;
       return `${bar('Timeline', { noback: true, right: meBtn() })}${timelineHero}<div class="pad" style="padding-top:8px">
         ${S.me && S.me.status !== 'approved' ? `<div class="card stack"><span class="badge warn">${S.me.status === 'pending' ? 'Selfie review pending' : 'Guest account'}</span><p class="muted small">You can read community posts. Selfie approval unlocks posting, likes and other interactions.</p>${S.me.status !== 'pending' ? fileLabel('pending-selfie', 'Verify with selfie', 'capture="user"') : ''}</div>` : ''}
         ${S.me && S.me.status === 'approved' ? `<div class="compose"><textarea id="ptxt" maxlength="500" placeholder="Share something with the community">${esc(d.text)}</textarea>
@@ -259,7 +259,7 @@
             : '<div class="card"><b>All caught up</b><p class="muted small">New requests show up here.</p></div>'}</div>`;
       }
       const r = S.reqs.outgoing;
-      return `${bar('Requests sent', { noback: true, right: meBtn() })}<div class="pad"><p class="muted small">Akoma is free. You can send one initial request to each woman; if she accepts and replies, you can chat freely.</p>
+      return `${bar('Requests sent', { noback: true, right: meBtn() })}<div class="pad"><p class="muted small">Meet GH is free. You can send one initial request to each woman; if she accepts and replies, you can chat freely.</p>
         ${S.loading && !r.length ? loadingBox() : r.length ? r.map((q) => `<button class="card stack" style="border:0;text-align:left;cursor:pointer;width:100%" data-act="open" data-id="${q.to.id}"><div class="row">${av(q.to, 44)}<div class="grow"><b>${esc(q.to.name)}, ${q.to.age}</b><span class="muted small" style="display:block">${esc(q.to.city)}</span></div>
           <span class="badge ${q.status === 'accepted' ? 'good' : q.status === 'declined' ? '' : 'warn'}">${q.status === 'accepted' ? 'Accepted' : q.status === 'declined' ? 'Declined' : 'Waiting for her reply'}</span></div><p class="small">&ldquo;${esc(q.body)}&rdquo;</p></button>`).join('')
           : '<div class="card"><b>Nothing sent yet</b><p class="muted small">Find someone in Discover.</p></div>'}</div>`;
@@ -294,10 +294,10 @@
         <button class="btn danger" data-act="submitreport" ${S.busy ? 'disabled' : ''}>Submit report</button></div>`;
     },
 
-    problem: () => `${bar('Report a problem')}<div class="pad stack"><p class="muted">Found a bug or something not working properly? Send the Akoma team a report. Please do not include passwords or private conversations.</p><label class="f">What is the problem? <select id="problem-category"><option>Profiles not loading</option><option>Chats or messages not showing</option><option>Photos or uploads</option><option>Login or account access</option><option>Selfie verification</option><option>Calls or notifications</option><option>Something else</option></select></label><label class="f">Describe what happened<textarea id="problem-details" maxlength=2000 rows=6 placeholder="What did you tap, what did you expect, and what happened instead?"></textarea></label><p class="muted small">We will attach your app version and the page you were using. Do not include passwords, ID documents or sensitive personal information.</p><button class="btn primary" data-act="submitproblem" ${S.busy ? 'disabled' : ''}>Send problem report</button></div>`,
+    problem: () => `${bar('Report a problem')}<div class="pad stack"><p class="muted">Found a bug or something not working properly? Send the Meet GH team a report. Please do not include passwords or private conversations.</p><label class="f">What is the problem? <select id="problem-category"><option>Profiles not loading</option><option>Chats or messages not showing</option><option>Photos or uploads</option><option>Login or account access</option><option>Selfie verification</option><option>Calls or notifications</option><option>Something else</option></select></label><label class="f">Describe what happened<textarea id="problem-details" maxlength=2000 rows=6 placeholder="What did you tap, what did you expect, and what happened instead?"></textarea></label><p class="muted small">We will attach your app version and the page you were using. Do not include passwords, ID documents or sensitive personal information.</p><button class="btn primary" data-act="submitproblem" ${S.busy ? 'disabled' : ''}>Send problem report</button></div>`,
 
     tips: () => `${bar('Stay safe')}<div class="pad"><div class="banner">${ic.warn}<span>Romance scams are the biggest risk on any dating app. These rules protect you.</span></div><div class="list">
-      ${[['Never send money, airtime or gifts', 'Not for emergencies, school fees, customs fees or investments. Report anyone who asks.'], ['Meet in a public place first', 'Tell a friend where you are going and share your live location.'], ['Keep chatting on Akoma at first', 'Move to WhatsApp only when you feel comfortable.'], ['Check the verified badge', 'A badge means the member completed Akoma selfie review. It is not proof of legal identity or a guarantee of character.'], ['Trust your instincts', 'If someone rushes you, pressures you or avoids a call, step back and report.']]
+      ${[['Never send money, airtime or gifts', 'Not for emergencies, school fees, customs fees or investments. Report anyone who asks.'], ['Meet in a public place first', 'Tell a friend where you are going and share your live location.'], ['Keep chatting on Meet GH at first', 'Move to WhatsApp only when you feel comfortable.'], ['Check the verified badge', 'A badge means the member completed Meet GH selfie review. It is not proof of legal identity or a guarantee of character.'], ['Trust your instincts', 'If someone rushes you, pressures you or avoids a call, step back and report.']]
         .map((t) => `<div class="stack" style="padding:12px 0;gap:4px"><b>${t[0]}</b><p class="muted small">${t[1]}</p></div>`).join('')}</div></div>`,
 
     me: () => {
@@ -306,7 +306,7 @@
         <div class="grow"><h3 style="font-size:22px">${esc(m.name)}, ${m.age}</h3><p class="muted small">${esc(m.city)}</p><div style="margin-top:6px">${m.status === 'approved' ? vb() : `<span class="badge warn">${m.status === 'pending' ? 'Selfie pending' : 'Guest'}</span>`}</div></div></div>
         ${m.bio ? `<p>${esc(m.bio)}</p>` : ''}
         ${m.status !== 'approved' ? `<div class="card stack"><div class="row wrap"><b>${m.status === 'pending' ? 'Selfie verification pending' : 'Guest account'}</b><span class="badge warn">${m.status === 'pending' ? 'Under review' : 'Restricted access'}</span></div><p class="muted small">${m.status === 'pending' ? 'Your selfie is awaiting review. Full access will unlock when it is approved.' : 'You can browse as a guest. Submit a selfie whenever you are ready to unlock full access.'}</p>${m.status === 'guest' ? fileLabel('pending-selfie', 'Verify with selfie', 'capture="user"') : ''}</div>` : ''}
-        ${isM() ? `<div class="subcard free-access"><div class="row" style="justify-content:space-between"><h3>Akoma access</h3><span class="badge good">Free</span></div>
+        ${isM() ? `<div class="subcard free-access"><div class="row" style="justify-content:space-between"><h3>Meet GH access</h3><span class="badge good">Free</span></div>
           <p class="small">All members can discover profiles, send message requests and chat without subscriptions or hidden charges.</p></div>` : ''}
         <div class="list"><button class="item" data-go="edit"><span class="grow"><b>Edit profile and photos</b></span></button>
           <button class="item" data-go="vault"><span class="grow"><b>Private Vault</b><span class="muted small" style="display:block">Share private photos with selected matches</span></span><span>›</span></button>
@@ -336,11 +336,11 @@
       const soundPrefs = window.AkomaSounds ? window.AkomaSounds.preferences() : { calls: true, messages: true, matches: true, ringtone: 'classic' };
       const soundToggle = (key, title, sub) => `<button class="toggle" role="switch" aria-checked="${!!soundPrefs[key]}" data-act="soundtoggle" data-id="${key}"><span><b>${title}</b><span class="muted small" style="display:block">${sub}</span></span><span class="sw"></span></button>`;
       const tg = (k, title, sub) => `<button class="toggle" role="switch" aria-checked="${!!m[k]}" data-act="set" data-id="${k}"><span><b>${title}</b>${sub ? `<span class="muted small" style="display:block">${sub}</span>` : ''}</span><span class="sw"></span></button>`;
-      return `${bar('Settings')}<div class="pad">${m.status === 'guest' ? `<div class="card stack"><b>Unlock your full Akoma account</b><p class="muted small">You can complete selfie verification at any time. No ID is required.</p>${fileLabel('pending-selfie', 'Verify with selfie', 'capture="user"')}</div>` : ''}<div class="list">
+      return `${bar('Settings')}<div class="pad">${m.status === 'guest' ? `<div class="card stack"><b>Unlock your full Meet GH account</b><p class="muted small">You can complete selfie verification at any time. No ID is required.</p>${fileLabel('pending-selfie', 'Verify with selfie', 'capture="user"')}</div>` : ''}<div class="list">
         ${isW() ? tg('hide_photo', 'Hide my profile photo', 'Only people you match with can see it') : ''}
-        ${tg('hide_from_contacts', 'Hide me from my phone contacts')}${tg('notifications', 'Notifications')}<button class="toggle" data-act="pushenable"><span><b>Enable push alerts</b><span class="muted small" style="display:block">Receive alerts when Akoma is not open (once push delivery is configured)</span></span><span class="sw"></span></button>
+        ${tg('hide_from_contacts', 'Hide me from my phone contacts')}${tg('notifications', 'Notifications')}<button class="toggle" data-act="pushenable"><span><b>Enable push alerts</b><span class="muted small" style="display:block">Receive alerts when Meet GH is not open (once push delivery is configured)</span></span><span class="sw"></span></button>
         <div class="card stack" style="margin:12px 0">
-          <div><b>Sound settings</b><p class="muted small">Choose which sounds Akoma plays on this device.</p></div>
+          <div><b>Sound settings</b><p class="muted small">Choose which sounds Meet GH plays on this device.</p></div>
           ${soundToggle('calls', 'Call sounds', 'Ringtones, ringback and call connection sounds')}
           ${soundToggle('messages', 'Message sounds', 'A gentle sound for new incoming messages')}
           ${soundToggle('matches', 'Match sounds', 'A short celebration when a new match is made')}
@@ -354,7 +354,7 @@
         <button class="item" data-go="problem"><span class="grow"><b>Report a problem</b><span class="muted small" style="display:block">Report a bug or something that is not working</span></span><span>›</span></button>
         ${tg('online_visible', 'Show my online status', 'Optional and equal for men and women. When off, you also cannot see other members’ activity.')}
         ${!DEMO ? `<button class="toggle" role="switch" aria-checked="${S.allowIncomingCalls}" data-act="callsetting"><span><b>Allow incoming calls</b><span class="muted small" style="display:block">Turn off voice and video call invitations</span></span><span class="sw"></span></button>` : ''}
-        <div class="card stack"><b>Nearby users</b><p class="muted small">Optional. If you enable this, Akoma stores an approximate location rounded to about 500 metres. Other members never receive your coordinates or see a map—only a broad distance band, and only when both of you enable nearby sharing. This setting works the same for men and women.</p>
+        <div class="card stack"><b>Nearby users</b><p class="muted small">Optional. If you enable this, Meet GH stores an approximate location rounded to about 500 metres. Other members never receive your coordinates or see a map—only a broad distance band, and only when both of you enable nearby sharing. This setting works the same for men and women.</p>
           <div class="row wrap"><span class="muted small">${m.location_enabled ? 'Location sharing is on' : 'Location sharing is off'}</span>
           <button class="btn sm ${m.location_enabled ? 'ghost' : 'primary'}" data-act="${m.location_enabled ? 'locationoff' : 'locationon'}">${m.location_enabled ? 'Turn off' : 'Enable nearby'}</button></div>
         </div></div>
@@ -363,14 +363,14 @@
         ${S.confirmDel ? `<div class="card stack"><b>Delete your account?</b><p class="muted small">Your profile, photos and chats are removed. This cannot be undone.</p><div class="row"><button class="btn sm grow" data-act="delno">Keep my account</button><button class="btn sm danger grow" data-act="delyes">Delete</button></div></div>` : '<button class="btn danger" data-act="del">Delete my account</button>'}</div>`;
     },
 
-    plans: () => `${bar('Free for everyone')}<div class="pad"><div class="card stack free-access"><span class="badge good">Always free</span><h3>No subscriptions. No payment required.</h3><p class="muted">Every Akoma member gets access to discovery, message requests and chats at no cost.</p><button class="btn primary" data-act="tabto" data-id="discover">Explore Akoma</button></div></div>`,
+    plans: () => `${bar('Free for everyone')}<div class="pad"><div class="card stack free-access"><span class="badge good">Always free</span><h3>No subscriptions. No payment required.</h3><p class="muted">Every Meet GH member gets access to discovery, message requests and chats at no cost.</p><button class="btn primary" data-act="tabto" data-id="discover">Explore Meet GH</button></div></div>`,
 
     receipt: () => `${bar('Payments')}<div class="pad">${S.sub && S.sub.active ? `<div class="card stack" style="align-items:center;text-align:center"><span class="badge good" style="padding:10px">${ic.check}</span><h3>Subscription active</h3><p class="muted small">Until ${new Date(S.sub.ends).toLocaleDateString('en-GB', { day: 'numeric', month: 'long' })}</p></div>` : ''}
       <div class="stack"><b>Payment history</b>${S.payments.length ? `<div class="list">${S.payments.map((r) => `<div class="row" style="padding:10px 0;justify-content:space-between"><span>${esc(r.plan === 'week' ? 'Weekly' : 'Monthly')} <span class="muted small">· ${esc(r.network || '')} · ${new Date(r.created_at).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' })}</span></span><b>${U.money(r.amount_ghs)}</b></div>`).join('')}</div>` : '<p class="muted small">No payments yet.</p>'}</div>
       <button class="btn primary" data-act="tabto" data-id="discover">Back to Discover</button></div>`,
 
     help: () => `${bar('Help and contact')}<div class="pad"><div>
-      <details><summary>How does verification work?</summary><p>Guests can browse first. To unlock full access, submit a selfie for private moderator review. Akoma does not require government ID uploads. Selfie review is not proof of legal identity or age.</p></details>
+      <details><summary>How does verification work?</summary><p>Guests can browse first. To unlock full access, submit a selfie for private moderator review. Meet GH does not require government ID uploads. Selfie review is not proof of legal identity or age.</p></details>
       <details><summary>Can men message me first?</summary><p>Verified men can send a free message request. It arrives as a request. You choose whether to open a chat, and he cannot send another initial request unless you reply.</p></details>
       <details><summary>Someone asked me for money</summary><p>Do not send anything. Tap the flag in the chat to report them. We remove scammers quickly.</p></details>
       <details><summary>Who can see my photos?</summary><p>Everyone can see them unless you hide your profile photo in Settings. Then only people you have matched with can.</p></details>
@@ -470,14 +470,14 @@
     }
     let h = `<div class="b ${mine ? 'me' : 'them'}${m.flagged ? ' flag' : ''}">${content}</div>`;
     if (m.flagged) {
-      h += `<div class="sys">${mine ? 'Safety check: your message mentions money. Akoma does not allow money or airtime requests. Repeated violations lead to a ban.' : 'Safety check: this message asks for money. Never send money or airtime to someone you have not met.'}
+      h += `<div class="sys">${mine ? 'Safety check: your message mentions money. Meet GH does not allow money or airtime requests. Repeated violations lead to a ban.' : 'Safety check: this message asks for money. Never send money or airtime to someone you have not met.'}
         ${mine ? '' : `<button class="btn sm danger" style="margin-top:8px;display:block" data-act="reportopen" data-id="${S.chat.other.id}">Report this person</button>`}</div>`;
     }
     return h;
   }
   function drawMsgs() {
     const box = $('#msgs'); if (!box) return;
-    box.innerHTML = '<div class="sys" style="background:var(--surface2);border-color:var(--line)">Akoma never asks for money. If someone does, report them.</div>' + S.msgs.map(msgHTML).join('');
+    box.innerHTML = '<div class="sys" style="background:var(--surface2);border-color:var(--line)">Meet GH never asks for money. If someone does, report them.</div>' + S.msgs.map(msgHTML).join('');
     if (S.ephemeral) { const m=S.msgs.find(x=>String(x.id)===String(S.ephemeral.id)); const media=m&&m.message_type==='video'?`<video src="${S.ephemeral.url}" controls autoplay playsinline></video>`:m&&m.message_type==='audio'?`<audio src="${S.ephemeral.url}" controls autoplay></audio>`:`<img src="${S.ephemeral.url}" alt="Private expiring media">`; box.insertAdjacentHTML('beforeend',`<div class="ephemeral-view"><div class="ephemeral-panel"><div class="row" style="justify-content:space-between"><b>Private media</b><button class="btn sm danger" data-act="closemedia" data-id="${S.ephemeral.id}">Close & destroy</button></div>${media}<p class="muted small">Closing deletes the server copy. A recipient may still capture what is displayed.</p></div></div>`); }
     box.scrollTop = box.scrollHeight;
   }
@@ -679,7 +679,7 @@
         const birth = dob ? new Date(dob + 'T00:00:00') : null; const today = new Date(); let age = birth ? today.getFullYear() - birth.getFullYear() - ((today.getMonth() < birth.getMonth() || (today.getMonth() === birth.getMonth() && today.getDate() < birth.getDate())) ? 1 : 0) : 0;
         S.onb.name = name; S.onb.dob = dob; S.onb.age = age || ''; S.onb.city = $('#ct').value;
         if (!name) { err.textContent = 'Enter your first name.'; err.hidden = false; return; }
-        if (!birth || isNaN(birth.getTime()) || birth > today || !(age >= 18)) { err.textContent = 'Akoma is for people aged 18 and over. Enter your date of birth to continue.'; err.hidden = false; return; }
+        if (!birth || isNaN(birth.getTime()) || birth > today || !(age >= 18)) { err.textContent = 'Meet GH is for people aged 18 and over. Enter your date of birth to continue.'; err.hidden = false; return; }
         return go('selfie');
       }
       case 'agree': S.onb.agreed = !S.onb.agreed; return render();
@@ -888,13 +888,13 @@
           if (!API.session() || document.visibilityState !== 'visible' || !S.me || !['guest','pending'].includes(S.me.status) || S.busy) return;
           try {
             const latest = await API.me();
-            if (latest && latest.status === 'approved') { S.me = latest; toast('Your Akoma account is approved. Welcome in!'); await route(); }
+            if (latest && latest.status === 'approved') { S.me = latest; toast('Your Meet GH account is approved. Welcome in!'); await route(); }
             else if (latest && S.me && (latest.status !== S.me.status || latest.selfie_path !== S.me.selfie_path || latest.review_note !== S.me.review_note)) { S.me = latest; render(); }
           } catch (_) { /* A temporary network issue should not interrupt the pending screen. */ }
         }, 30000);
         document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && API.session()) API.heartbeat().catch(() => {}); });
       } else await go('welcome', { reset: true });
-    } catch (e) { $('#screen').innerHTML = `<div class="pad"><div class="banner">${ic.warn}<span>Akoma could not start. ${esc(U.friendly(e))}</span></div><button class="btn primary" onclick="location.reload()">Try again</button></div>`; }
+    } catch (e) { $('#screen').innerHTML = `<div class="pad"><div class="banner">${ic.warn}<span>Meet GH could not start. ${esc(U.friendly(e))}</span></div><button class="btn primary" onclick="location.reload()">Try again</button></div>`; }
     if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) {
       // Auto-update: when a new version takes over, reload once so every device (phone or PC) runs the same code.
       const hadController = !!navigator.serviceWorker.controller; let reloaded = false;
@@ -911,6 +911,6 @@
     try { S.matches = await API.matches(); await refreshNotifications(); if (MAIN.includes(S.screen)) render(); } catch (_) {}
   }, 12000);
 
-  window.addEventListener('offline', () => toast('You are offline. Some Akoma features will pause until your connection returns.'));
-  window.addEventListener('online', () => toast('Connection restored. You can continue using Akoma.'));
+  window.addEventListener('offline', () => toast('You are offline. Some Meet GH features will pause until your connection returns.'));
+  window.addEventListener('online', () => toast('Connection restored. You can continue using Meet GH.'));
 })();

@@ -11,15 +11,15 @@ Deno.serve(async(req)=>{
   if(!publicKey||!privateKey) return reply({error:'push_not_configured'},503);
   webpush.setVapidDetails(subject,publicKey,privateKey);
   const admin=createClient(Deno.env.get('SUPABASE_URL')!,Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!,{auth:{persistSession:false}});
-  const payload=await req.json().catch(()=>({})); const record=payload.record||{}; const table=payload.table||''; let recipient:string|null=null; let title='Akoma'; let body='You have a new update.'; let url='/';
+  const payload=await req.json().catch(()=>({})); const record=payload.record||{}; const table=payload.table||''; let recipient:string|null=null; let title='Meet GH'; let body='You have a new update.'; let url='/';
   if(table==='messages' && payload.type==='INSERT'){
     const {data:m}=await admin.from('matches').select('woman_id,man_id,status').eq('id',record.match_id).maybeSingle();
     if(!m||m.status!=='active') return reply({sent:0});
-    recipient=m.woman_id===record.sender_id?m.man_id:m.woman_id; title='New message'; body='You have a new message on Akoma.'; url='/';
+    recipient=m.woman_id===record.sender_id?m.man_id:m.woman_id; title='New message'; body='You have a new message on Meet GH.'; url='/';
   } else if(table==='matches' && payload.type==='INSERT'){
-    recipient=record.man_id; title='New match'; body='You have a new match on Akoma.';
+    recipient=record.man_id; title='New match'; body='You have a new match on Meet GH.';
   } else if(table==='calls' && payload.type==='INSERT' && record.status==='ringing'){
-    recipient=record.recipient_id; title=record.call_type==='video'?'Incoming video call':'Incoming voice call'; body='Someone is calling you on Akoma.'; url='/';
+    recipient=record.recipient_id; title=record.call_type==='video'?'Incoming video call':'Incoming voice call'; body='Someone is calling you on Meet GH.'; url='/';
   } else return reply({ignored:true});
   if(!recipient) return reply({sent:0});
   const {data:profile}=await admin.from('profiles').select('notifications,status').eq('id',recipient).maybeSingle();

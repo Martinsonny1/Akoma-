@@ -1,4 +1,4 @@
-# Akoma priority update — deployment checklist
+# Meet GH priority update — deployment checklist
 
 This update adds the client and database foundations for the requested safety, privacy and reliability work. **Apply the database migration and deploy the Edge Function changes before publishing the updated website.** Keep a database backup first.
 

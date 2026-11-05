@@ -1,9 +1,9 @@
-# Publish Akoma without Python or Node.js
+# Publish Meet GH without Python or Node.js
 
 ## Easiest method: Netlify Drop
 
 1. Extract the ZIP on your computer.
-2. Open the extracted Akoma folder (the one containing `index.html`).
+2. Open the extracted Meet GH folder (the one containing `index.html`).
 3. Select everything in that folder (`index.html`, `css`, `js`, `admin`, `landing.html`, icons, manifest and service worker).
 4. Visit https://app.netlify.com/drop and sign in or create a free Netlify account.
 5. Drag the selected application folder onto the drop area (Netlify publishes its contents).

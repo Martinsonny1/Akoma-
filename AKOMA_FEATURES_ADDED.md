@@ -1,6 +1,6 @@
-# Akoma feature upgrade
+# Meet GH feature upgrade
 
-This ZIP is based on the previously supplied Akoma media-messaging project and adds:
+This ZIP is based on the previously supplied Meet GH media-messaging project and adds:
 
 - **Private Vault:** private storage, individual-photo permissions, match-specific grants for 5/15/30/60 minutes or 24 hours, and owner revocation.
 - **Close-to-destroy media:** one-time chat media opens in a dedicated viewer; closing calls the Edge Function to delete the Storage object. A scheduled cleanup handles abandoned opens and expired timed media.
