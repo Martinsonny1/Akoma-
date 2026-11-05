@@ -1,5 +1,5 @@
 // Keeps the app shell available when the connection is weak. Live data is never cached.
-const CACHE = 'akoma-shell-v16-notification-badges';
+const CACHE = 'akoma-shell-v17-romantic-luxury';
 const SHELL = ['./', 'index.html', 'css/app.css', 'js/config.js', 'js/shared.js', 'js/api-demo.js', 'js/api-supabase.js', 'js/api.js', 'js/app.js', 'js/calls.js', 'icon.svg', 'manifest.webmanifest', 'privacy.html', 'terms.html'];
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', (e) => {
