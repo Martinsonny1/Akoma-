@@ -33,11 +33,27 @@
     }
     return paths.map((p) => { const c = p && urlCache.get(bucket + '/' + p); return c ? c.url : null; });
   }
+  // supabase-js functions.invoke() only returns a Blob for application/octet-stream and returns
+  // text for image/*, video/* and audio/*, which corrupts media. Use fetch() and read the real Blob.
+  async function mediaFn(body) {
+    const { data } = await sb.auth.getSession();
+    const token = data && data.session && data.session.access_token;
+    if (!token) throw new Error('not_authenticated');
+    const res = await fetch(C.SUPABASE_URL.replace(/\/$/, '') + '/functions/v1/media-lifecycle', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + token, 'apikey': C.SUPABASE_ANON_KEY },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) {
+      let msg = 'Media unavailable';
+      try { const j = await res.json(); if (j && j.error) msg = j.error; } catch (_) {}
+      throw new Error(msg);
+    }
+    return res;
+  }
   async function chatMediaUrl(messageId) {
-    const { data, error } = await sb.functions.invoke('media-lifecycle', { body: { action: 'chat-download', message_id: Number(messageId) } });
-    if (error) throw error;
-    if (!(data instanceof Blob)) throw new Error('Media unavailable');
-    return URL.createObjectURL(data);
+    const res = await mediaFn({ action: 'chat-download', message_id: Number(messageId) });
+    return URL.createObjectURL(await res.blob());
   }
   async function withUrls(cards, all) {
     const pick = (c) => (all ? c.photos : c.photos.slice(0, 1));
@@ -151,7 +167,7 @@
     },
     async updateProfile(patch) {
       const allowed = {};
-      ['name', 'age', 'city', 'bio', 'interests', 'looking_for', 'hide_photo', 'hide_from_contacts', 'notifications', 'online_visible'].forEach((k) => { if (patch[k] !== undefined) allowed[k] = patch[k]; });
+      ['city', 'bio', 'interests', 'looking_for', 'hide_photo', 'hide_from_contacts', 'notifications', 'online_visible'].forEach((k) => { if (patch[k] !== undefined) allowed[k] = patch[k]; });
       await ok(sb.from('profiles').update(allowed).eq('id', uid()));
     },
     async setLocation(lat, lng, enabled) { await ok(sb.rpc('set_my_location', { p_lat: lat, p_lng: lng, p_enabled: enabled !== false })); _me = null; },
@@ -168,7 +184,7 @@
     },
     async grantVault(assetId, matchId, minutes) { return ok(sb.rpc('grant_vault_access',{p_asset:assetId,p_match:matchId,p_minutes:minutes})); },
     async revokeVault(grantId) { return ok(sb.rpc('revoke_vault_access',{p_grant:grantId})); },
-    async vaultImage(path) { const {data,error}=await sb.functions.invoke('media-lifecycle',{body:{action:'vault-download',path}}); if(error) throw error; if(!(data instanceof Blob)) throw new Error('Photo unavailable'); return URL.createObjectURL(data); },
+    async vaultImage(path) { const res = await mediaFn({ action: 'vault-download', path }); return URL.createObjectURL(await res.blob()); },
     async deleteVault(assetId) { const path=await ok(sb.rpc('delete_vault_asset',{p_asset:assetId})); if(path) await ok(sb.storage.from('vault-media').remove([path])); return true; },
     async setOnlineVisibility(visible) { await ok(sb.rpc('set_online_visibility', { p_visible: !!visible })); _me = null; },
     async heartbeat() { if (uid()) await ok(sb.rpc('heartbeat')); },
@@ -191,7 +207,12 @@
       await ok(sb.storage.from('verification').upload(path, blob, { contentType: 'image/jpeg', upsert: true }));
       await ok(sb.from('profiles').update(kind === 'selfie' ? { selfie_path: path } : { id_card_path: path }).eq('id', uid()));
     },
-    async deleteAccount() { await ok(sb.rpc('delete_my_account')); await API.signOut(); },
+    // The Edge Function removes every stored file (ID, photos, vault, chat media) and then the account.
+    async deleteAccount() {
+      await mediaFn({ action: 'delete-account' });
+      try { await sb.auth.signOut({ scope: 'local' }); } catch (_) {}
+      _session = null; _me = null; urlCache.clear();
+    },
 
     // ---- browsing ---------------------------------------------------------
     async profiles(f) {
@@ -260,12 +281,10 @@
       } catch (e) { await sb.storage.from('chat-media').remove([path]); throw e; }
     },
     async openMedia(messageId) {
-      const { data, error } = await sb.functions.invoke('media-lifecycle', { body: { action: 'open', message_id: Number(messageId) } });
-      if (error) throw error;
-      if (!(data instanceof Blob)) throw new Error('Media could not be opened.');
-      return URL.createObjectURL(data);
+      const res = await mediaFn({ action: 'open', message_id: Number(messageId) });
+      return URL.createObjectURL(await res.blob());
     },
-    async closeMedia(messageId) { const {data,error}=await sb.functions.invoke('media-lifecycle',{body:{action:'close',message_id:Number(messageId)}}); if(error) throw error; return data; },
+    async closeMedia(messageId) { const res = await mediaFn({ action: 'close', message_id: Number(messageId) }); return res.json(); },
     // Live updates, with a slow poll as a safety net if the realtime socket drops.
     watchMessages(matchId, cb) {
       let last = 0, stopped = false;

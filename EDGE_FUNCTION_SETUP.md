@@ -19,6 +19,9 @@ Run the SQL migrations in this order, after your existing base schema:
 1. `supabase/features_migration.sql` (nearby and online status, if not already applied)
 2. `supabase/media_messaging_migration.sql` (media messaging, if not already applied)
 3. `supabase/presence_vault_migration.sql` (Vault and Looking Tonight)
+4. `supabase/security_hardening_migration.sql` (locks name/age after approval, validates ID file paths)
+
+Re-deploy `media-lifecycle` after updating: it now also handles `delete-account`, which removes a member's ID, photos, vault and chat media from Storage before deleting the account.
 
 Do not rerun `schema.sql` on a live database just to add these features.
 

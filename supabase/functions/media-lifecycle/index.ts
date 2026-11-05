@@ -136,5 +136,41 @@ Deno.serve(async (req) => {
     });
   }
 
+  if (body.action === 'delete-account') {
+    // Remove every stored file belonging to this member, then the account itself.
+    // Files are removed first: if any removal fails the account is kept so the user can retry.
+    const removeFolder = async (bucket: string) => {
+      for (;;) {
+        const { data: items, error } = await admin.storage.from(bucket).list(userId, { limit: 1000 });
+        if (error) throw error;
+        const paths = (items || []).filter((i) => i.name && i.id).map((i) => `${userId}/${i.name}`);
+        if (!paths.length) return;
+        const { error: rmError } = await admin.storage.from(bucket).remove(paths);
+        if (rmError) throw rmError;
+        if ((items || []).length < 1000) return;
+      }
+    };
+    try {
+      for (const bucket of ['photos', 'verification', 'vault-media']) await removeFolder(bucket);
+      for (;;) {
+        const { data: rows, error } = await admin.from('messages').select('media_path')
+          .eq('sender_id', userId).not('media_path', 'is', null).limit(100);
+        if (error) throw error;
+        const paths = (rows || []).map((r) => r.media_path as string);
+        if (!paths.length) break;
+        const { error: rmError } = await admin.storage.from('chat-media').remove(paths);
+        if (rmError) throw rmError;
+        await admin.from('messages').update({ media_path: null, media_mime: null, body: 'Expired media' })
+          .eq('sender_id', userId).in('media_path', paths);
+      }
+      const { error: delError } = await admin.auth.admin.deleteUser(userId);
+      if (delError) throw delError;
+      return json({ deleted: true });
+    } catch (e) {
+      console.error('AKOMA DELETE ACCOUNT ERROR:', e instanceof Error ? e.message : e);
+      return json({ error: 'delete_failed' }, 500);
+    }
+  }
+
   return json({ error: 'unknown_action' }, 400);
 });

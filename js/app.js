@@ -38,7 +38,7 @@
   const freshOnb = () => ({ role: null, name: '', age: '', city: 'Accra', bio: '', interests: [], looking: 'Dating', photos: [], selfie: null, card: null, agreed: false, done: { profile: false, photos: 0, selfie: false, card: false } });
   const S = {
     screen: 'boot', hist: [], me: null, sub: null, plans: [], profiles: [], feed: [], reqs: { incoming: [], outgoing: [] },
-    matches: [], msgs: [], chat: null, allowIncomingCalls: true, vault: [], ephemeral: null, recording: false, recorder: null, recordChunks: [], card: null, gal: 0, dview: 'grid', f: { min: 18, max: 99, radius: 0 },
+    matches: [], msgs: [], chat: null, mediaMode: 'normal', allowIncomingCalls: true, vault: [], ephemeral: null, recording: false, recorder: null, recordChunks: [], card: null, gal: 0, dview: 'grid', f: { min: 18, max: 99, radius: 0 },
     email: '', password: '', authMode: 'signup', step: 'email', busy: false, loading: false, onb: freshOnb(),
     draft: { text: '', blob: null, preview: null, err: '' },
     cmp: { to: null, text: '', err: '', today: 0 }, rep: { target: null, reason: REASONS[0], block: true, details: '' },
@@ -291,7 +291,7 @@
       const c = S.chat; if (!c) return loadingBox();
       return `<div class="chat">${bar(esc(c.other.name), { right: `<button class="icon-btn call-head-btn" data-ak-call="audio" aria-label="Voice call" title="Voice call">☎</button><button class="icon-btn call-head-btn" data-ak-call="video" aria-label="Video call" title="Video call">▣</button><button class="icon-btn" data-act="reportopen" data-id="${c.other.id}" aria-label="Block or report">${ic.flag}</button>` })}
         <div class="msgs" id="msgs"></div>
-        <div class="media-options"><select id="media-mode" aria-label="Media privacy"><option value="normal">Keep in chat</option><option value="view_once">Close to destroy (view once)</option><option value="timed:10">10 seconds</option><option value="timed:30">30 seconds</option><option value="timed:60">1 minute</option><option value="timed:3600">1 hour</option><option value="timed:86400">24 hours</option><option value="timed:604800">7 days</option></select><span class="muted tiny">Media privacy</span></div>
+        <div class="media-options"><select id="media-mode" aria-label="Media privacy"><option value="normal"${S.mediaMode==='normal'?' selected':''}>Keep in chat</option><option value="view_once"${S.mediaMode==='view_once'?' selected':''}>Close to destroy (view once)</option><option value="timed:10"${S.mediaMode==='timed:10'?' selected':''}>10 seconds</option><option value="timed:30"${S.mediaMode==='timed:30'?' selected':''}>30 seconds</option><option value="timed:60"${S.mediaMode==='timed:60'?' selected':''}>1 minute</option><option value="timed:3600"${S.mediaMode==='timed:3600'?' selected':''}>1 hour</option><option value="timed:86400"${S.mediaMode==='timed:86400'?' selected':''}>24 hours</option><option value="timed:604800"${S.mediaMode==='timed:604800'?' selected':''}>7 days</option></select><span class="muted tiny">Media privacy</span></div>
         <div class="composer"><label class="icon-btn attach" aria-label="Attach photo or video">＋<input id="chatfile" type="file" multiple accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime"></label><label class="icon-btn attach" aria-label="Take a photo">${ic.cam}<input id="chatcamera" type="file" accept="image/*" capture="environment"></label><button class="icon-btn voice-btn" data-act="voice" aria-label="Record voice note">${S.recording ? '■' : '🎙'}</button><input id="msg" type="text" maxlength="1000" placeholder="Write a message" autocomplete="off"><button class="icon-btn" style="background:var(--brand);color:var(--on-brand);border:0" data-act="send" aria-label="Send">${ic.send}</button></div><p class="media-note">Only chat matches can send media. Photos up to 8 MB · Videos up to 20 MB · Voice notes up to 2 minutes.</p></div>`;
     },
 
@@ -471,7 +471,7 @@
     let m = S.matches.find((x) => x.id === matchId);
     if (!m) { S.matches = await API.matches(); m = S.matches.find((x) => x.id === matchId); }
     if (!m) { toast('That chat is no longer available'); return render(); }
-    S.chat = m; window.AKOMA_CURRENT_MATCH = { id: m.id, name: m.other.name }; S.msgs = []; S.ephemeral=null;
+    S.mediaMode = 'normal'; S.chat = m; window.AKOMA_CURRENT_MATCH = { id: m.id, name: m.other.name }; S.msgs = []; S.ephemeral=null;
     await go('chat');
     try { S.msgs = await API.messages(matchId); drawMsgs(); } catch (e) { toast(U.friendly(e)); render(); return; }
     if (S.unwatch) S.unwatch();
@@ -482,7 +482,7 @@
     const kind = file.type.startsWith('image/') ? 'image' : file.type.startsWith('video/') ? 'video' : 'audio';
     let blob = file;
     if (kind === 'image') blob = await shrink(file);
-    const choice = ($('#media-mode') || {}).value || 'normal';
+    const choice = S.mediaMode || 'normal';
     const mode = choice.startsWith('timed:') ? 'timed' : choice;
     const seconds = choice.startsWith('timed:') ? Number(choice.split(':')[1]) : null;
     toast('Uploading…'); render();
@@ -711,7 +711,9 @@
     if (e.target.id === 'rmsg') { S.cmp.text = e.target.value; const c = $('#rc'); if (c) c.textContent = S.cmp.text.length + '/200 · Free to send'; }
   });
   phone.addEventListener('change', async (e) => {
-    const t = e.target, files = Array.from(t.files || []); if (!files.length) return;
+    const t = e.target;
+    if (t.id === 'media-mode') { S.mediaMode = t.value; return; }
+    const files = Array.from(t.files || []); if (!files.length) return;
     try {
       if (t.id === 'selfie') { const blob = await shrink(files[0], 'verify'); S.onb.selfie = { blob, preview: await U.blobToDataURL(blob) }; render(); }
       else if (t.id === 'idcard') { const blob = await shrink(files[0], 'verify'); S.onb.card = { blob, preview: await U.blobToDataURL(blob) }; render(); }
