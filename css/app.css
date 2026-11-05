@@ -398,23 +398,23 @@ input[type=text],input[type=tel],input[type=number],select.full{font-size:16px;m
 .ak-timeline-hero{background-color:#172b35;background-image:url("../images/akoma-timeline-hero.jpg");}
 .ak-page-hero:before{background:linear-gradient(90deg,rgba(10,12,18,.46),rgba(10,12,18,.12) 72%),linear-gradient(180deg,rgba(10,12,18,.06),rgba(10,12,18,.24));}
 .discover-grid-wrap{padding-top:0;}
-.ak-featured-section{margin:0 -12px 20px;padding:13px 12px 0;}
+.ak-featured-section{margin:0 -12px 22px;padding:17px 12px 2px;}
 .ak-section-heading{display:flex;align-items:flex-end;justify-content:space-between;gap:12px;margin:0 0 10px;}
-.ak-section-heading h3{font-size:16px;line-height:1.15;}
+.ak-section-heading h3{font-size:18px;line-height:1.15;}
 .ak-section-heading .ak-hero-kicker{margin-bottom:3px;font-size:8px;}
 .ak-rail-hint{font-size:10px;color:var(--muted);white-space:nowrap;padding-bottom:2px;}
-.ak-featured-rail{display:flex;gap:11px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;padding:1px 1px 8px;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
+.ak-featured-rail{display:flex;gap:13px;overflow-x:auto;overscroll-behavior-x:contain;scroll-snap-type:x mandatory;padding:2px 2px 12px;scrollbar-width:none;-webkit-overflow-scrolling:touch;}
 .ak-featured-rail::-webkit-scrollbar{display:none;}
-.ak-featured-card{position:relative;display:block;flex:0 0 112px;width:112px;height:142px;padding:0;border:0;border-radius:15px;overflow:hidden;background:var(--surface2);text-align:left;scroll-snap-align:start;cursor:pointer;box-shadow:0 3px 12px rgba(0,0,0,.12);}
+.ak-featured-card{position:relative;display:block;flex:0 0 176px;width:176px;height:218px;padding:0;border:0;border-radius:19px;overflow:hidden;background:var(--surface2);text-align:left;scroll-snap-align:start;cursor:pointer;box-shadow:0 5px 18px rgba(0,0,0,.16);}
 .ak-featured-photo,.ak-featured-photo>.av{position:absolute;inset:0;width:100%;height:100%;border-radius:0!important;}
 .ak-featured-photo>.av img{width:100%;height:100%;object-fit:cover;}
 .ak-featured-photo:after{content:"";position:absolute;inset:25% 0 0;background:linear-gradient(180deg,transparent,rgba(0,0,0,.78));}
-.ak-featured-caption{position:absolute;left:8px;right:7px;bottom:8px;display:flex;flex-direction:column;gap:3px;color:#fff;z-index:1;}
-.ak-featured-caption b{font-size:12px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.ak-featured-meta{display:flex;align-items:center;gap:5px;font-size:9px;color:rgba(255,255,255,.9);}
+.ak-featured-caption{position:absolute;left:12px;right:10px;bottom:12px;display:flex;flex-direction:column;gap:5px;color:#fff;z-index:1;}
+.ak-featured-caption b{font-size:15px;line-height:1.15;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.ak-featured-meta{display:flex;align-items:center;gap:5px;font-size:11px;color:rgba(255,255,255,.9);}
 .ak-featured-meta .ak-presence-dot{width:6px;height:6px;background:#35df83;}
 .ak-people-heading{margin:0 0 10px;padding:0 1px;}
-@media(max-width:360px){.ak-page-hero{height:136px;padding-left:14px;padding-bottom:18px}.ak-featured-card{flex-basis:104px;width:104px;height:134px}.ak-featured-section{margin-left:-9px;margin-right:-9px;padding-left:9px;padding-right:9px;}}
+@media(max-width:360px){.ak-page-hero{height:136px;padding-left:14px;padding-bottom:18px}.ak-featured-card{flex-basis:158px;width:158px;height:198px}.ak-featured-section{margin-left:-9px;margin-right:-9px;padding-left:9px;padding-right:9px;}}
 
 
 /* Call UI fix: the video layers must never intercept taps, and controls always sit above them. */
