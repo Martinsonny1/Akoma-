@@ -17,7 +17,7 @@
     app.innerHTML = `<div class="login"><div class="brandmark">♥</div><h1>Akoma Admin</h1><p class="err">The dashboard encountered an error: ${esc(message)}</p><p class="muted small">Refresh the page. If the problem continues, send a screenshot of this message.</p></div>`;
   });
   const DEMO = API.mode === 'demo';
-  const TABS = [['overview', 'Overview'], ['queue', 'Verification'], ['reports', 'Reports'], ['posts', 'Posts'], ['users', 'Users'], ['payments', 'Payments'], ['waitlist', 'Waitlist']];
+  const TABS = [['overview', 'Overview'], ['queue', 'Verification'], ['content', 'Content review'], ['reports', 'Reports'], ['posts', 'Posts'], ['users', 'Users'], ['payments', 'Payments'], ['waitlist', 'Waitlist']];
   const REJECT = ['ID photo is unclear', 'ID details could not be read', 'Name or age does not match the profile', 'Profile photos need review', 'Profile looks fake', 'Other'];
   const GOAL = 100;
   const S = { me: null, tab: 'overview', stats: null, data: {}, q: '', busy: false, email: '', toast: '' };
@@ -48,7 +48,7 @@
 
   function header() {
     const st = S.stats || {};
-    const badge = { queue: st.pending, reports: st.openReports, posts: st.pendingPosts };
+    const badge = { queue: st.pending, content: st.pendingContent, reports: st.openReports, posts: st.pendingPosts };
     return `<div class="top"><div class="top-in"><div class="top-row"><h1>Akoma Admin</h1><div class="row"><span class="small">${esc(S.me.name)}</span><button class="link" data-act="signout">Sign out</button></div></div>
       <div class="tabs" role="tablist">${TABS.map((t) => `<button role="tab" aria-selected="${S.tab === t[0]}" data-tab="${t[0]}">${t[1]}${badge[t[0]] ? `<span class="count">${badge[t[0]]}</span>` : ''}</button>`).join('')}</div></div></div>`;
   }
@@ -59,7 +59,7 @@
       const pct = Math.min(100, Math.round((s.waitlistWomen / GOAL) * 100));
       const ratio = s.women ? (s.men / s.women).toFixed(1) : '0';
       const tile = (n, label, tab, alert) => `<button class="tile ${alert ? 'alert' : ''}" data-tab="${tab}"><b>${n}</b><span class="muted small">${label}</span></button>`;
-      return `<div class="tiles">${tile(s.pending, 'Profiles to verify', 'queue', s.pending > 0)}${tile(s.openReports, 'Open reports', 'reports', s.openReports > 0)}${tile(s.pendingPosts, 'Photos to review', 'posts', s.pendingPosts > 0)}
+      return `<div class="tiles">${tile(s.pending, 'Profiles to verify', 'queue', s.pending > 0)}${tile(s.pendingContent || 0, 'Changed bios / photos', 'content', (s.pendingContent || 0) > 0)}${tile(s.openReports, 'Open reports', 'reports', s.openReports > 0)}${tile(s.pendingPosts, 'Photos to review', 'posts', s.pendingPosts > 0)}
         <div class="tile"><b>${s.women}</b><span class="muted small">Women approved</span></div><div class="tile"><b>${s.men}</b><span class="muted small">Men approved</span></div>
         <div class="tile"><b>${s.activeSubs}</b><span class="muted small">Active subscribers</span></div><div class="tile"><b>${U.money(s.revenue)}</b><span class="muted small">Total payments</span></div></div>
         <div class="panel"><h2>Launch check</h2>
@@ -74,7 +74,7 @@
       if (!rows.length) return '<div class="empty">Nobody is waiting for review.</div>';
       return rows.map((r) => {
         const p = r.profile, man = p.role === 'man';
-        return `<div class="case"><div class="case-head"><h3>${esc(p.name)}, ${p.age}</h3><span class="badge">${esc(p.role)}</span><span class="muted small">${esc(p.city)} · joined ${date(p.created_at)} · waiting ${Math.max(0, Math.floor((Date.now() - new Date(p.created_at).getTime()) / 3600000))}h</span></div>
+        return `<div class="case"><div class="case-head"><h3>${esc(p.name)}, ${p.age}</h3><span class="muted small">DOB: ${esc(p.date_of_birth || 'Not supplied (legacy account)')}</span><span class="badge">${esc(p.role)}</span><span class="muted small">${esc(p.city)} · joined ${date(p.created_at)} · waiting ${Math.max(0, Math.floor((Date.now() - new Date(p.created_at).getTime()) / 3600000))}h</span></div>
           ${p.bio ? `<p>${esc(p.bio)}</p>` : '<p class="muted">No bio.</p>'}
           <p class="small muted">Interests: ${esc((p.interests || []).join(', ') || 'none')} · Looking for: ${esc(p.looking_for)}</p>
           <div class="imgs"><figure>${dataImg(r.idCard, 'Government-issued ID')}<figcaption>Government-issued ID</figcaption></figure>
@@ -86,6 +86,15 @@
       }).join('');
     },
 
+    content() {
+      const rows=S.data.content; if(!rows) return '<div class="empty">Loading content awaiting review…</div>';
+      if(!rows.length) return '<div class="empty">No changed bios or photos are waiting for review.</div>';
+      return rows.map(q=>`<div class="case"><div class="case-head"><h3>${esc(q.member.name)}</h3><span class="badge warn">${esc(q.type.replace('profile_','').replace('_',' '))}</span><span class="muted small">${date(q.created_at)}</span></div>
+        ${q.type==='profile_bio'?`<p>${esc(q.payload.bio||'')}</p>`:''}
+        ${q.type==='profile_photos'?`<div class="imgs">${(q.media||[]).map((u,i)=>`<figure>${dataImg(u,'Proposed profile photo')}<figcaption>Proposed photo ${i+1}</figcaption></figure>`).join('')||'<p class="muted">No preview available</p>'}</div>`:''}
+        <div class="actions"><button class="btn primary" data-act="contentok" data-id="${q.id}">Approve change</button><button class="btn danger" data-act="contentno" data-id="${q.id}">Reject change</button></div></div>`).join('');
+    },
+
     reports() {
       const rows = S.data.reports; if (!rows) return '<div class="empty">Loading…</div>';
       const open = rows.filter((r) => r.status === 'open');
@@ -93,7 +102,7 @@
       const head = `<div class="row wrap"><button class="btn sm ${S.data.rfilter !== 'all' ? 'primary' : ''}" data-act="rfilter" data-id="open">Open (${open.length})</button><button class="btn sm ${S.data.rfilter === 'all' ? 'primary' : ''}" data-act="rfilter" data-id="all">All (${rows.length})</button></div>`;
       if (!filt.length) return head + '<div class="empty">No reports here.</div>';
       return head + filt.map((r) => `<div class="case"><div class="case-head"><h3>${esc(r.reported.name)}</h3>${badgeFor(r.reported.status || 'approved')}<span class="badge ${r.status === 'open' ? 'warn' : ''}">${esc(r.status)}</span><span class="muted small">${esc(r.reason)} · ${date(r.created_at)}</span></div>
-        <p class="small muted">Reported by ${esc(r.reporter.name)}</p>${r.details ? `<p>&ldquo;${esc(r.details)}&rdquo;</p>` : ''}
+        <p class="small muted">Reported by ${esc(r.reporter.name)}</p>${r.details ? `<p>&ldquo;${esc(r.details)}&rdquo;</p>` : ''}<p class="small muted">Target: ${esc(r.target_type||'profile')}${r.media_kind ? ' · '+esc(r.media_kind) : ''}</p>${r.media ? `<div class="imgs big"><figure>${r.media_kind==='video'?`<video controls playsinline src="${esc(r.media)}" style="width:100%;border-radius:12px"></video>`:r.media_kind==='audio'?`<audio controls src="${esc(r.media)}"></audio>`:`<img src="${esc(r.media)}" alt="Reported content">`}</figure></div>`:''}
         ${r.recent.length ? `<div class="chat">${r.recent.map((m) => `<div class="${m.from}${m.flagged ? ' flag' : ''}">${esc(m.body)}</div>`).join('')}</div>` : '<p class="small muted">No chat between these two.</p>'}
         ${r.status === 'open' ? `<div class="actions"><button class="btn danger" data-act="banreport" data-id="${r.id}" data-user="${r.reported.id}">Ban ${esc(r.reported.name)}</button><button class="btn" data-act="dismiss" data-id="${r.id}">Dismiss report</button></div>` : ''}</div>`).join('');
     },
@@ -114,8 +123,8 @@
       const search = `<label class="f">Search by name<input type="search" id="uq" placeholder="Name or city" value="${esc(S.q)}"></label>`;
       if (!rows) return search + '<div class="empty">Loading…</div>';
       if (!rows.length) return search + '<div class="empty">No members match.</div>';
-      return `${search}<div class="tablewrap"><table><thead><tr><th>Name</th><th>Role</th><th class="num">Age</th><th>City</th><th>Status</th><th>Subscribed</th><th>Featured</th><th>Actions</th></tr></thead><tbody>
-        ${rows.map((u) => `<tr><td>${esc(u.name)}</td><td>${esc(u.role)}</td><td class="num">${u.age}</td><td>${esc(u.city)}</td><td>${badgeFor(u.status)}</td><td>${u.role === 'man' ? (u.subscribed ? '<span class="badge good">Yes</span>' : '<span class="muted">No</span>') : '<span class="muted">Free</span>'}</td>
+      return `${search}<div class="actions"><button class="btn sm danger" data-act="bulkban">Ban selected members</button><span class="muted small">Select members below</span></div><div class="tablewrap"><table><thead><tr><th>Select</th><th>Name</th><th>Role</th><th class="num">Age</th><th>City</th><th>Status</th><th>Subscribed</th><th>Featured</th><th>Actions</th></tr></thead><tbody>
+        ${rows.map((u) => `<tr><td><input type="checkbox" class="user-select" value="${u.id}" aria-label="Select ${esc(u.name)}"></td><td>${esc(u.name)}</td><td>${esc(u.role)}</td><td class="num">${u.age}</td><td>${esc(u.city)}</td><td>${badgeFor(u.status)}</td><td>${u.role === 'man' ? (u.subscribed ? '<span class="badge good">Yes</span>' : '<span class="muted">No</span>') : '<span class="muted">Free</span>'}</td>
           <td>${u.featured ? '<span class="badge warn">Featured</span>' : '<span class="muted">No</span>'}</td>
           <td><div class="actions">${u.status === 'approved' ? `<button class="btn sm" data-act="feature" data-id="${u.id}" data-days="${u.featured ? 0 : 7}">${u.featured ? 'Unfeature' : 'Feature 7 days'}</button><button class="btn sm danger" data-act="ban" data-id="${u.id}">Ban</button>` : ''}
             ${u.status === 'banned' || u.status === 'rejected' ? `<button class="btn sm" data-act="restore" data-id="${u.id}">Restore</button>` : ''}</div></td></tr>`).join('')}</tbody></table></div>`;
@@ -153,6 +162,7 @@
   const LOAD = {
     overview: async () => {},
     queue: async () => { S.data.queue = await A.queue(); },
+    content: async () => { S.data.content = await A.contentQueue(); },
     reports: async () => { S.data.reports = await A.reports(); S.data.rfilter = S.data.rfilter || 'open'; },
     posts: async () => { S.data.posts = await A.posts(); },
     users: async () => { S.data.users = await A.users(S.q); },
@@ -180,6 +190,8 @@
       case 'demoadmin': await API.demoLogin('admin'); return afterLogin();
       case 'signout': await API.signOut(); S.me = null; S.data = {}; return render();
 
+      case 'contentok': await A.reviewContent(id,true,'Approved by moderator'); note('Content approved'); return refresh();
+      case 'contentno': await A.reviewContent(id,false,'Rejected by moderator'); note('Content rejected'); return refresh();
       case 'approve': await A.setStatus(id, 'approved', ''); note('Approved'); return refresh();
       case 'reject': { const sel = document.querySelector(`[data-reason="${id}"]`); await A.setStatus(id, 'rejected', sel ? sel.value : ''); note('Rejected'); return refresh(); }
       case 'rfilter': S.data.rfilter = id; return render();
@@ -187,6 +199,7 @@
       case 'dismiss': await A.resolveReport(id, 'dismissed'); note('Report dismissed'); return refresh();
       case 'postok': await A.moderatePost(id, true); note('Post approved'); return refresh();
       case 'postno': await A.moderatePost(id, false); note('Post removed'); return refresh();
+      case 'bulkban': { const ids=[...document.querySelectorAll('.user-select:checked')].map(x=>x.value); if(!ids.length){note('Select at least one member');return render();} if(!confirm(`Ban ${ids.length} selected member(s)?`)) return; for(const uid of ids) await A.setStatus(uid,'banned','Bulk ban by admin'); note(`${ids.length} members banned`); return refresh(); }
       case 'ban': await A.setStatus(id, 'banned', 'Banned by admin'); note('User banned'); return refresh();
       case 'restore': await A.setStatus(id, 'approved', ''); note('Restored'); return refresh();
       case 'feature': await A.feature(id, +el.dataset.days); note(+el.dataset.days ? 'Featured for 7 days' : 'Removed from featured'); return refresh();

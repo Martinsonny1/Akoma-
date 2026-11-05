@@ -48,7 +48,19 @@ Deno.serve(async (req) => {
         removed++;
       }
     }
-    return json({ removed });
+    // Remove identity documents 30 days after a successful approval.
+    const { data: dueIds, error: idQueryError } = await admin.from('profiles')
+      .select('id,id_card_path').not('id_card_path','is',null).lte('id_delete_after',new Date().toISOString()).limit(200);
+    if (idQueryError) return json({ error: idQueryError.message }, 500);
+    let idsRemoved = 0;
+    for (const profile of (dueIds || [])) {
+      const { error: rmIdError } = await admin.storage.from('verification').remove([profile.id_card_path]);
+      if (!rmIdError) {
+        await admin.from('profiles').update({ id_card_path: null, id_deleted_at: new Date().toISOString() }).eq('id',profile.id);
+        idsRemoved++;
+      }
+    }
+    return json({ removed, idsRemoved });
   }
 
   const authHeader = req.headers.get('Authorization') || '';

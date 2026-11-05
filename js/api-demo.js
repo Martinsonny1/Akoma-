@@ -352,6 +352,10 @@
     async unmatch(matchId) { const x = db.matches.find((y) => y.id === matchId); if (x) x.status = 'ended'; save(); },
 
     // ---- safety ---------------------------------------------------------------
+    async reportContent(r) {
+      await wait(); const me=need();
+      db.reports.push({id:'rp'+rid(),reporter_id:me.id,reported_id:r.target,reason:r.reason,details:(`Reported ${r.type} ${r.contentId}. `+(r.details||'')).slice(0,500),status:'open',created_at:now()}); save();
+    },
     async report(r) {
       await wait();
       const me = need();

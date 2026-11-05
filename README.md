@@ -105,3 +105,8 @@ Calls have no app-imposed duration cap, but LiveKit usage, network availability 
 ## Updated identity verification and pending access
 
 New registrations submit a government-issued ID (Ghana Card accepted) for manual review. Pending and rejected accounts remain in a restricted verification hub: they can check status, replace/resubmit an ID, and preview descriptions of Akoma features, but they cannot browse real member profiles or use matching, messaging, calls, nearby, or Vault features. Run `supabase/verification_progressive_migration.sql` in Supabase SQL Editor after the existing migrations; this prevents admin approval when no government ID has been submitted. The app checks approval automatically every 30 seconds while the verification screen is open. The review target shown to users is an aim, not a guarantee or automatic approval. Admins should review the queue promptly and only approve after checking the ID and profile. Existing schema columns `selfie_path` and `id_card_path` are retained for compatibility; the updated flow uses `id_card_path` for all new submissions.
+
+
+## Latest safety and privacy update
+
+See [PRIORITY_FEATURES_SETUP.md](PRIORITY_FEATURES_SETUP.md) for the required Supabase migration, ID-image cleanup schedule, push notification configuration, and verification checklist. Run the migration and configure the scheduled jobs/webhooks before relying on the new backend features.

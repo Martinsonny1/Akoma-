@@ -73,7 +73,7 @@
     const paths = []; cards.forEach((c) => pick(c).forEach((p) => paths.push(p)));
     const got = await urls(paths);
     const map = new Map(paths.map((p, i) => [p, got[i]]));
-    return cards.map((c) => Object.assign({}, c, { photos: pick(c).map((p) => map.get(p)).filter(Boolean) }));
+    return cards.map((c) => Object.assign({}, c, { photo_paths: pick(c).slice(), photos: pick(c).map((p) => map.get(p)).filter(Boolean) }));
   }
   async function cardMap() {
     const rows = await withUrls(await ok(sb.rpc('list_profiles', { p_min: 18, p_max: 99 })), false);
@@ -130,7 +130,7 @@
       if (error) throw error;
       return data;
     },
-    async signOut() { await sb.auth.signOut(); _session = null; _me = null; },
+    async signOut() { try { const sub=await (await navigator.serviceWorker.ready).pushManager.getSubscription(); if(sub && uid()) await sb.from('push_subscriptions').delete().eq('user_id',uid()).eq('endpoint',sub.endpoint); } catch (_) {} await sb.auth.signOut(); _session = null; _me = null; },
 
     // ---- LiveKit call signalling (media itself is never sent through Supabase) ----
     async callRequest(payload) {
@@ -174,14 +174,15 @@
     },
     async createProfile(f) {
       await ok(sb.from('profiles').insert({
-        id: uid(), role: f.role, name: f.name, age: +f.age, city: f.city || 'Accra', bio: f.bio || '',
-        interests: f.interests || [], looking_for: f.looking_for || 'Dating'
+        id: uid(), role: f.role, name: f.name, age: +f.age, date_of_birth: f.dob, city: f.city || 'Accra', bio: f.bio || '',
+        interests: f.interests || [], looking_for: f.looking_for || 'Dating', terms_accepted_at: new Date().toISOString(), privacy_accepted_at: new Date().toISOString(), terms_version: '2026-11-05', privacy_version: '2026-11-05'
       }));
     },
     async updateProfile(patch) {
       const allowed = {};
       ['city', 'bio', 'interests', 'looking_for', 'hide_photo', 'hide_from_contacts', 'notifications', 'online_visible'].forEach((k) => { if (patch[k] !== undefined) allowed[k] = patch[k]; });
       await ok(sb.from('profiles').update(allowed).eq('id', uid()));
+      if (patch.notifications === false) await sb.from('push_subscriptions').delete().eq('user_id',uid());
     },
     async setLocation(lat, lng, enabled) { await ok(sb.rpc('set_my_location', { p_lat: lat, p_lng: lng, p_enabled: enabled !== false })); _me = null; },
     async setLookingTonight(enabled, mode, hours) { return ok(sb.rpc('set_looking_tonight', { p_enabled: !!enabled, p_mode: mode || 'either', p_hours: hours || 4 })); },
@@ -200,20 +201,30 @@
     async vaultImage(path) { const res = await mediaFn({ action: 'vault-download', path }); return URL.createObjectURL(await res.blob()); },
     async deleteVault(assetId) { const path=await ok(sb.rpc('delete_vault_asset',{p_asset:assetId})); if(path) await ok(sb.storage.from('vault-media').remove([path])); return true; },
     async setOnlineVisibility(visible) { await ok(sb.rpc('set_online_visibility', { p_visible: !!visible })); _me = null; },
+    async enablePush() {
+      if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) throw new Error('Push alerts are not supported by this browser.');
+      if (!C.VAPID_PUBLIC_KEY) throw new Error('Push delivery is not configured yet. Add the VAPID public key and deploy the push sender first.');
+      const permission=await Notification.requestPermission(); if(permission!=='granted') throw new Error('Notification permission was not granted. You can enable it in browser settings.');
+      const reg=await navigator.serviceWorker.ready; let sub=await reg.pushManager.getSubscription();
+      if(!sub) sub=await reg.pushManager.subscribe({userVisibleOnly:true,applicationServerKey:Uint8Array.from(atob(C.VAPID_PUBLIC_KEY.replace(/-/g,'+').replace(/_/g,'/')),c=>c.charCodeAt(0))});
+      await ok(sb.from('push_subscriptions').upsert({user_id:uid(),endpoint:sub.endpoint,subscription:sub.toJSON(),updated_at:new Date().toISOString()},{onConflict:'endpoint'})); return true;
+    },
     async heartbeat() { if (uid()) await ok(sb.rpc('heartbeat')); },
     async addPhoto(blob) {
       const me = await ensureMe();
       if (me.photoPaths.length >= 6) throw new Error('too_many_photos');
       const path = uid() + '/' + uuid() + '.jpg';
       await ok(sb.storage.from('photos').upload(path, blob, { contentType: 'image/jpeg' }));
-      try { await ok(sb.from('profiles').update({ photos: me.photoPaths.concat(path) }).eq('id', uid())); }
+      const next=me.photoPaths.concat(path);
+      try { await ok(sb.from('profiles').update({ photos: next }).eq('id', uid())); me.photoPaths=next; }
       catch (e) { await sb.storage.from('photos').remove([path]); throw e; }
     },
     async removePhoto(index) {
       const me = await ensureMe();
       const path = me.photoPaths[index]; if (!path) return;
       await ok(sb.from('profiles').update({ photos: me.photoPaths.filter((_, i) => i !== index) }).eq('id', uid()));
-      await sb.storage.from('photos').remove([path]);
+      // The profile-edit review trigger holds the old public photo set until approval;
+      // keep the object in storage so the still-visible version does not break.
     },
     async uploadVerification(kind, blob) {
       const path = uid() + '/' + (kind === 'selfie' ? 'selfie' : 'id-card') + '.jpg';
@@ -308,6 +319,7 @@
 
     // ---- safety ---------------------------------------------------------------
     async report(r) { await ok(sb.rpc('report_user', { target: r.target, why: r.reason, more: r.details || '', also_block: !!r.block })); },
+    async reportContent(r) { await ok(sb.rpc('report_content',{p_target_type:r.type,p_content_id:String(r.contentId),p_reason:r.reason,p_details:r.details||''})); },
 
     // ---- timeline ---------------------------------------------------------------
     async feed() {
@@ -358,14 +370,14 @@
         const n = async (q) => { const { count } = await q; return count || 0; };
         const head = (t) => sb.from(t).select('id', { count: 'exact', head: true });
         const prof = () => sb.from('profiles').select('id', { count: 'exact', head: true }).neq('role', 'admin');
-        const [pending, openReports, pendingPosts, women, men, activeSubs, wlW, wlM, pays] = await Promise.all([
-          n(prof().eq('status', 'pending')), n(head('reports').eq('status', 'open')), n(head('posts').eq('status', 'pending')),
+        const [pending, openReports, pendingPosts, pendingContent, women, men, activeSubs, wlW, wlM, pays] = await Promise.all([
+          n(prof().eq('status', 'pending')), n(head('reports').eq('status', 'open')), n(head('posts').eq('status', 'pending')), n(head('content_review_queue').eq('status','pending')),
           n(prof().eq('role', 'woman').eq('status', 'approved')), n(prof().eq('role', 'man').eq('status', 'approved')),
           n(sb.from('subscriptions').select('user_id', { count: 'exact', head: true }).eq('status', 'active').gt('current_period_end', new Date().toISOString())),
           n(head('waitlist').eq('role', 'woman')), n(head('waitlist').eq('role', 'man')),
           ok(sb.from('payments').select('amount_ghs'))
         ]);
-        return { pending, openReports, pendingPosts, women, men, activeSubs, waitlistWomen: wlW, waitlistMen: wlM, revenue: pays.reduce((a, p) => a + Number(p.amount_ghs), 0) };
+        return { pending, openReports, pendingPosts, pendingContent, women, men, activeSubs, waitlistWomen: wlW, waitlistMen: wlM, revenue: pays.reduce((a, p) => a + Number(p.amount_ghs), 0) };
       },
       async queue() {
         const rows = await ok(sb.from('profiles').select('*').eq('status', 'pending').neq('role', 'admin').order('created_at'));
@@ -387,13 +399,14 @@
         const by = new Map(people.map((p) => [p.id, p]));
         const brief = (id) => by.get(id) || { id, name: 'Deleted user', role: '', status: '' };
         return Promise.all(rows.map(async (r) => {
-          let recent = [];
+          let recent = []; let reportedMedia = null;
+          if (r.target_media_path) { try { reportedMedia = (await urls([r.target_media_path], r.target_type === 'message' ? 'chat-media' : 'photos'))[0]; } catch (_) {} }
           const pair = await ok(sb.from('matches').select('id').or('and(woman_id.eq.' + r.reporter_id + ',man_id.eq.' + r.reported_id + '),and(woman_id.eq.' + r.reported_id + ',man_id.eq.' + r.reporter_id + ')'));
           if (pair.length) {
             const ms = await ok(sb.from('messages').select('sender_id,body,flagged').eq('match_id', pair[0].id).order('created_at', { ascending: false }).limit(4));
             recent = ms.reverse().map((m) => ({ from: m.sender_id === r.reported_id ? 'reported' : 'reporter', body: m.body, flagged: m.flagged }));
           }
-          return { id: r.id, reason: r.reason, details: r.details, status: r.status, created_at: r.created_at, reporter: brief(r.reporter_id), reported: brief(r.reported_id), recent };
+          return { id: r.id, reason: r.reason, details: r.details, status: r.status, created_at: r.created_at, reporter: brief(r.reporter_id), reported: brief(r.reported_id), recent, target_type:r.target_type||'profile', media_kind:r.target_media_kind, media:reportedMedia };
         }));
       },
       async resolveReport(id, status) { await ok(sb.from('reports').update({ status }).eq('id', id)); },
@@ -408,7 +421,7 @@
       async moderatePost(id, okay) { await ok(sb.from('posts').update({ status: okay ? 'visible' : 'removed' }).eq('id', id)); },
       async users(q) {
         let query = sb.from('profiles').select('id,name,age,role,city,status,featured_until,created_at').neq('role', 'admin').order('created_at', { ascending: false }).limit(200);
-        if (q) query = query.ilike('name', '%' + q.replace(/[%_]/g, '') + '%');
+        if (q) { const term=q.replace(/[%,_]/g,''); query=query.or('name.ilike.%'+term+'%,city.ilike.%'+term+'%'); }
         const [rows, subs] = await Promise.all([ok(query), ok(sb.from('subscriptions').select('user_id,status,current_period_end'))]);
         const active = new Set(subs.filter((s) => s.status === 'active' && new Date(s.current_period_end) > new Date()).map((s) => s.user_id));
         return rows.map((u) => ({ id: u.id, name: u.name, age: u.age, role: u.role, city: u.city, status: u.status, featured: !!(u.featured_until && new Date(u.featured_until) > new Date()), subscribed: active.has(u.id), created_at: u.created_at }));
@@ -422,7 +435,13 @@
         return rows.map((p) => ({ reference: p.reference, user: by.get(p.user_id) || { id: p.user_id, name: 'Deleted user' }, plan: p.plan, amount_ghs: p.amount_ghs, network: p.network, created_at: p.created_at }));
       },
       async waitlist() { return ok(sb.from('waitlist').select('*').order('created_at', { ascending: false }).limit(1000)); },
-      async invite(id, v) { await ok(sb.from('waitlist').update({ invited: v !== false }).eq('id', id)); }
+      async invite(id, v) { await ok(sb.from('waitlist').update({ invited: v !== false }).eq('id', id)); },
+      async contentQueue() {
+        const rows = await ok(sb.from('content_review_queue').select('*').eq('status','pending').order('created_at',{ascending:true}).limit(150));
+        const ids=[...new Set(rows.map(x=>x.member_id))]; const people=ids.length?await ok(sb.from('profiles').select('id,name,role').in('id',ids)):[]; const by=new Map(people.map(x=>[x.id,x]));
+        return Promise.all(rows.map(async q=>{ const p=q.payload||{}; let media=[]; if(q.content_type==='profile_photos' && Array.isArray(p.photos)) media=await urls(p.photos); return {id:q.id,member:by.get(q.member_id)||{id:q.member_id,name:'Deleted member'},type:q.content_type,payload:p,media,created_at:q.created_at}; }));
+      },
+      async reviewContent(id,approve,note) { await ok(sb.rpc('admin_review_content',{p_item:id,p_approve:!!approve,p_note:note||null})); }
     }
   };
 

@@ -35,7 +35,7 @@
   const isW = () => S.me && S.me.role === 'woman';
   const isM = () => S.me && S.me.role === 'man';
 
-  const freshOnb = () => ({ role: null, name: '', age: '', city: 'Accra', bio: '', interests: [], looking: 'Dating', photos: [], selfie: null, card: null, agreed: false, done: { profile: false, photos: 0, selfie: false, card: false } });
+  const freshOnb = () => ({ role: null, name: '', dob: '', age: '', city: 'Accra', bio: '', interests: [], looking: 'Dating', photos: [], selfie: null, card: null, agreed: false, done: { profile: false, photos: 0, selfie: false, card: false } });
   const S = {
     screen: 'boot', hist: [], me: null, sub: null, plans: [], profiles: [], feed: [], reqs: { incoming: [], outgoing: [] },
     matches: [], msgs: [], chat: null, mediaMode: 'normal', allowIncomingCalls: true, vault: [], ephemeral: null, staged: [], mediaPrivacy: 'normal', rec: { state: 'idle' }, sending: false, recording: false, recorder: null, recordChunks: [], card: null, gal: 0, dview: 'grid', f: { min: 18, max: 99, radius: 0 },
@@ -91,7 +91,7 @@
 
     details: () => `${bar('About you')}<div class="pad">
       <label class="f">First name<input id="nm" type="text" maxlength="40" autocomplete="given-name" value="${esc(S.onb.name)}"></label>
-      <label class="f">Age<input id="ag" type="number" min="1" max="99" placeholder="18 or older" value="${esc(S.onb.age)}"></label>
+      <label class="f">Date of birth<input id="dob" type="date" max="${new Date(Date.now() - 18 * 365.2425 * 864e5).toISOString().slice(0,10)}" value="${esc(S.onb.dob)}" required></label><p class="muted small">Your date of birth is private. Other members only see your calculated age.</p>
       <label class="f">City<select class="full" id="ct">${CITIES.map((c) => `<option${c === S.onb.city ? ' selected' : ''}>${c}</option>`).join('')}</select></label>
       <p class="err" id="derr" hidden></p><button class="btn primary" data-act="details">Continue</button></div>`,
 
@@ -111,7 +111,7 @@
       <div class="row"><span class="badge good">${ic.check}</span><span>Never ask for or send money, airtime or gifts.</span></div>
       <div class="row"><span class="badge good">${ic.check}</span><span>No paid or transactional arrangements.</span></div>
       <div class="row"><span class="badge good">${ic.check}</span><span>Be respectful. People review every report, and bans are fast.</span></div></div>
-      <button class="toggle" role="checkbox" aria-checked="${S.onb.agreed}" data-act="agree"><span>I agree to the rules and the Privacy Policy</span><span class="sw"></span></button>
+      <p class="small">Please review our <a href="privacy.html" target="_blank" rel="noopener">Privacy Policy</a> and <a href="terms.html" target="_blank" rel="noopener">Terms of Service</a>. By continuing, you confirm you are 18 or older and consent to the processing described in the Privacy Policy.</p><button class="toggle" role="checkbox" aria-checked="${S.onb.agreed}" data-act="agree"><span>I have read and agree to the Terms and Privacy Policy</span><span class="sw"></span></button>
       <button class="btn primary" data-go="photos" ${S.onb.agreed ? '' : 'disabled'}>Agree and continue</button></div>`,
 
     photos: () => {
@@ -213,7 +213,7 @@
         const img = p.image ? (typeof p.image === 'string' ? `<div class="pimg"><img src="${esc(p.image)}" alt="Photo shared by ${esc(a.name)}"></div>` : `<div class="pimg g" style="--h:${p.image.h}"><span>${esc(p.image.label)}</span></div>`) : '';
         return `<div class="post"><div class="row">${p.mine ? av(a, 40) : `<button class="item" style="padding:0;width:auto" data-act="open" data-id="${a.id}" aria-label="View ${esc(a.name)}">${av(a, 40)}</button>`}
           <div class="grow"><b>${esc(a.name)}</b> ${vb()}<span class="muted small" style="display:block">${U.timeAgo(p.created_at)}${p.status === 'pending' ? ' · Waiting for review' : ''}</span></div>
-          ${p.mine ? '' : `<button class="icon-btn" data-act="reportopen" data-id="${a.id}" aria-label="Report this post">${ic.flag}</button>`}</div>
+          ${p.mine ? '' : `<button class="icon-btn" data-act="reportpost" data-id="${p.id}" data-user="${a.id}" aria-label="Report this post">${ic.flag}</button>`}</div>
           ${p.body ? `<p>${esc(p.body)}</p>` : ''}${img}
           <div class="row"><button class="chip" aria-pressed="${p.liked}" data-act="plike" data-id="${p.id}">${ic.heart.replace('<svg', '<svg style="width:14px;height:14px;vertical-align:-2px;margin-right:5px"')}${p.likes}</button></div></div>`;
       }).join('');
@@ -237,7 +237,7 @@
           : p.request_sent ? '<button class="btn" disabled>Request sent. Waiting for her reply</button>'
             : `<button class="btn gold" data-act="like" data-id="${p.id}">Send message request</button>`;
       return `${bar(esc(p.name), { right: `<button class="icon-btn" data-act="reportopen" data-id="${p.id}" aria-label="Block or report">${ic.flag}</button>` })}<div class="pad">
-        <div style="display:flex;justify-content:center">${main ? `<img src="${esc(main)}" alt="${esc(p.name)}" style="width:100%;max-height:340px;object-fit:cover;border-radius:22px">` : av(p, 190, true)}</div>
+        <div style="display:flex;justify-content:center">${main ? `<div style="position:relative;width:100%"><img src="${esc(main)}" alt="${esc(p.name)}" style="width:100%;max-height:340px;object-fit:cover;border-radius:22px">${p.photo_paths && p.photo_paths[S.gal] ? `<button class="btn sm" style="position:absolute;right:10px;bottom:10px;background:rgba(255,255,255,.94);color:#10262B" data-act="reportprofilephoto" data-id="${esc(p.photo_paths[S.gal])}" data-user="${p.id}">Report this photo</button>` : ''}</div>` : av(p, 190, true)}</div>
         ${photos.length > 1 ? `<div class="row" style="justify-content:center">${photos.map((u, i) => `<button class="icon-btn" style="width:46px;height:46px;border-radius:12px;overflow:hidden;padding:0;${i === S.gal ? 'outline:2px solid var(--brand)' : ''}" data-act="gal" data-id="${i}" aria-label="Photo ${i + 1}"><img src="${esc(u)}" alt="" style="width:100%;height:100%;object-fit:cover"></button>`).join('')}</div>` : ''}
         <div><div class="row wrap" style="gap:8px"><h3 style="font-size:22px">${esc(p.name)}, ${p.age}</h3>${vb()}</div><p class="muted small">${esc(p.city)}${p.distance_band ? ' · '+esc(p.distance_band)+' away' : ''}${p.activity_label ? ' · '+esc(p.activity_label) : ''}</p></div>
         ${hiddenNote(p)}
@@ -344,7 +344,7 @@
       const tg = (k, title, sub) => `<button class="toggle" role="switch" aria-checked="${!!m[k]}" data-act="set" data-id="${k}"><span><b>${title}</b>${sub ? `<span class="muted small" style="display:block">${sub}</span>` : ''}</span><span class="sw"></span></button>`;
       return `${bar('Settings')}<div class="pad"><div class="list">
         ${isW() ? tg('hide_photo', 'Hide my profile photo', 'Only people you match with can see it') : ''}
-        ${tg('hide_from_contacts', 'Hide me from my phone contacts')}${tg('notifications', 'Notifications')}
+        ${tg('hide_from_contacts', 'Hide me from my phone contacts')}${tg('notifications', 'Notifications')}<button class="toggle" data-act="pushenable"><span><b>Enable push alerts</b><span class="muted small" style="display:block">Receive alerts when Akoma is not open (once push delivery is configured)</span></span><span class="sw"></span></button>
         ${tg('online_visible', 'Show my online status', 'Optional and equal for men and women. When off, you also cannot see other members’ activity.')}
         ${!DEMO ? `<button class="toggle" role="switch" aria-checked="${S.allowIncomingCalls}" data-act="callsetting"><span><b>Allow incoming calls</b><span class="muted small" style="display:block">Turn off voice and video call invitations</span></span><span class="sw"></span></button>` : ''}
         <div class="card stack"><b>Nearby users</b><p class="muted small">Optional. If you enable this, Akoma stores an approximate location rounded to about 500 metres. Other members never receive your coordinates or see a map—only a broad distance band, and only when both of you enable nearby sharing. This setting works the same for men and women.</p>
@@ -654,10 +654,11 @@
       // onboarding
       case 'role': S.onb.role = id; S.f = { min: 18, max: 99 }; return go('details');
       case 'details': {
-        const name = $('#nm').value.trim(), age = parseInt($('#ag').value, 10), err = $('#derr');
-        S.onb.name = name; S.onb.age = isNaN(age) ? '' : age; S.onb.city = $('#ct').value;
+        const name = $('#nm').value.trim(), dob = ($('#dob').value || ''), err = $('#derr');
+        const birth = dob ? new Date(dob + 'T00:00:00') : null; const today = new Date(); let age = birth ? today.getFullYear() - birth.getFullYear() - ((today.getMonth() < birth.getMonth() || (today.getMonth() === birth.getMonth() && today.getDate() < birth.getDate())) ? 1 : 0) : 0;
+        S.onb.name = name; S.onb.dob = dob; S.onb.age = age || ''; S.onb.city = $('#ct').value;
         if (!name) { err.textContent = 'Enter your first name.'; err.hidden = false; return; }
-        if (!(age >= 18)) { err.textContent = 'Akoma is for people aged 18 and over. Enter your real age to continue.'; err.hidden = false; return; }
+        if (!birth || isNaN(birth.getTime()) || birth > today || !(age >= 18)) { err.textContent = 'Akoma is for people aged 18 and over. Enter your date of birth to continue.'; err.hidden = false; return; }
         return go('selfie');
       }
       case 'agree': S.onb.agreed = !S.onb.agreed; return render();
@@ -673,7 +674,7 @@
         S.f = { min: Math.max(18, +$('#pmin').value || 18), max: Math.min(99, +$('#pmax').value || 99) };
         return guard(async () => {
           const o = S.onb, d = o.done;
-          if (!d.profile) { const ex = await API.me(); if (!ex) await API.createProfile({ role: o.role, name: o.name, age: o.age, city: o.city, bio: o.bio, interests: o.interests, looking_for: o.looking }); d.profile = true; }
+          if (!d.profile) { const ex = await API.me(); if (!ex) await API.createProfile({ role: o.role, name: o.name, age: o.age, dob: o.dob, city: o.city, bio: o.bio, interests: o.interests, looking_for: o.looking }); d.profile = true; }
           while (d.photos < o.photos.length) { await API.addPhoto(o.photos[d.photos].blob); d.photos++; }
           if (o.card && !d.card) { await API.uploadVerification('card', o.card.blob); d.card = true; }
           S.me = await API.me(); await go('status', { reset: true });
@@ -722,7 +723,9 @@
       case 'send': return sendComposer();
       case 'openmedia': return guard(async () => { const url = await API.openMedia(id); const m = S.msgs.find(x => String(x.id) === String(id)); if (m) { m.opened_at = new Date().toISOString(); S.ephemeral={id,url}; drawMsgs(); } });
       case 'closemedia': return guard(async()=>{ await API.closeMedia(id); const m=S.msgs.find(x=>String(x.id)===String(id)); if(m){m.media_path=null;m.media_url=null;m.body='Expired media';m.opened_at=new Date().toISOString();} if(S.ephemeral&&String(S.ephemeral.id)===String(id))S.ephemeral=null; drawMsgs(); toast('Media closed and server copy deleted.'); });
-      case 'reportmedia': S.rep = { target: S.chat.other.id, reason: 'Something else', block: false, details: 'I am reporting media message ' + id + ' in this conversation.' }; return go('report');
+      case 'reportmedia': S.rep = { target: S.chat.other.id, contentType: 'message', contentId: id, reason: 'Something else', block: false, details: 'I am reporting this image, video or voice note.' }; return go('report');
+      case 'reportprofilephoto': S.rep = { target: el.dataset.user, contentType: 'profile_photo', contentId: id, reason: 'Something else', block: false, details: 'I am reporting this profile photo.' }; return go('report');
+      case 'reportpost': S.rep = { target: el.dataset.user, contentType: 'post', contentId: id, reason: 'Something else', block: false, details: '' }; return go('report');
       case 'voice': return startRecording();
       case 'recpause': return S.rec.state === 'paused' ? resumeRecording() : pauseRecording();
       case 'recdel': return deleteRecording();
@@ -747,7 +750,7 @@
       case 'blockt': { const d = $('#rdet'); if (d) S.rep.details = d.value; S.rep.block = !S.rep.block; return render(); }
       case 'submitreport': {
         const d = $('#rdet'); if (d) S.rep.details = d.value;
-        return guard(async () => { await API.report({ target: S.rep.target, reason: S.rep.reason, details: S.rep.details, block: S.rep.block }); if (S.rep.block && S.chat && window.AkomaCalls) await window.AkomaCalls.endIfMatch(S.chat.id); toast('Report sent. A moderator will review it.'); S.profiles = S.profiles.filter((p) => !(S.rep.block && p.id === S.rep.target)); await go(S.rep.block ? 'inbox' : 'discover', { reset: true }); });
+        return guard(async () => { if (S.rep.contentType) { await API.reportContent({type:S.rep.contentType,contentId:S.rep.contentId,target:S.rep.target,reason:S.rep.reason,details:S.rep.details}); if(S.rep.block) await API.report({target:S.rep.target,reason:S.rep.reason,details:S.rep.details,block:true}); } else await API.report({ target: S.rep.target, reason: S.rep.reason, details: S.rep.details, block: S.rep.block }); if (S.rep.block && S.chat && window.AkomaCalls) await window.AkomaCalls.endIfMatch(S.chat.id); toast('Report sent. A moderator will review it.'); S.profiles = S.profiles.filter((p) => !(S.rep.block && p.id === S.rep.target)); await go(S.rep.block ? 'inbox' : 'discover', { reset: true }); });
       }
 
       // account
@@ -756,9 +759,10 @@
       case 'editsave': {
         const bio = $('#ebio').value.trim();
         if (U.hasContact(bio) || U.hasMoney(bio)) { const e = $('#eerr'); e.textContent = U.friendly(new Error('bio_not_allowed')); e.hidden = false; return; }
-        return guard(async () => { await API.updateProfile({ bio, city: $('#ect').value, interests: S.editInterests || S.me.interests, looking_for: S.editLooking || S.me.looking_for }); S.me = await API.me(); toast('Profile updated'); S.hist.pop(); await go('me', { back: true }); });
+        return guard(async () => { await API.updateProfile({ bio, city: $('#ect').value, interests: S.editInterests || S.me.interests, looking_for: S.editLooking || S.me.looking_for }); S.me = await API.me(); toast('Changes submitted for review. Your current profile stays visible until approval.'); S.hist.pop(); await go('me', { back: true }); });
       }
-      case 'rmphoto': return guard(async () => { await API.removePhoto(+id); S.me = await API.me(); });
+      case 'rmphoto': return guard(async () => { await API.removePhoto(+id); S.me = await API.me(); toast('Photo removal submitted for moderator review.'); });
+      case 'pushenable': return guard(async () => { await API.enablePush(); toast('This device is subscribed to push alerts.'); });
       case 'set': {
         const v = !S.me[id]; S.me[id] = v; render();
         try {
@@ -824,7 +828,7 @@
       else if (t.id === 'pending-id') { await guard(async () => { const blob = await shrink(files[0], 'verify'); await API.uploadVerification('card', blob); S.me = await API.me(); toast('Your ID was submitted securely for review.'); render(); }); t.value = ''; }
       else if (t.id === 'slotfile') { for (const f of files.slice(0, 6 - S.onb.photos.length)) { const blob = await shrink(f); S.onb.photos.push({ blob, preview: await U.blobToDataURL(blob) }); } render(); }
       else if (t.id === 'pimg') { S.draft.text = ($('#ptxt') || {}).value || S.draft.text; S.draft.blob = await shrink(files[0]); S.draft.preview = await U.blobToDataURL(S.draft.blob); S.draft.err = ''; render(); }
-      else if (t.id === 'editphoto') { await guard(async () => { for (const f of files.slice(0, 6 - S.me.photos.length)) await API.addPhoto(await shrink(f)); S.me = await API.me(); }); }
+      else if (t.id === 'editphoto') { await guard(async () => { for (const f of files.slice(0, 6 - S.me.photos.length)) await API.addPhoto(await shrink(f)); S.me = await API.me(); toast('New photos submitted for moderator review.'); }); }
       else if (t.id === 'chatfile' || t.id === 'chatcamera') { await stageFiles(files); t.value = ''; }
       else if (t.id === 'vaultfile') { await guard(async()=>{ for(const f of files.slice(0,8)) await API.uploadVault(f); S.vault=await API.vaultAssets(); toast('Private photos added to your Vault.'); render(); }); t.value=''; }
     } catch (err) { toast(U.friendly(err)); render(); }
@@ -861,4 +865,7 @@
       }).catch(() => {});
     }
   })();
+
+  window.addEventListener('offline', () => toast('You are offline. Some Akoma features will pause until your connection returns.'));
+  window.addEventListener('online', () => toast('Connection restored. You can continue using Akoma.'));
 })();
