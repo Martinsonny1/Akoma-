@@ -1,5 +1,5 @@
 // Keeps the app shell available when the connection is weak. Live data is never cached.
-const CACHE = 'meetgh-shell-v22-timeline-comments';
+const CACHE = 'meetgh-shell-v23-push-notifications';
 const SHELL = ['./', 'index.html', 'css/app.css', 'js/config.js', 'js/shared.js', 'js/api-demo.js', 'js/api-supabase.js', 'js/api.js', 'js/app.js', 'js/calls.js', 'icon.svg', 'manifest.webmanifest', 'privacy.html', 'terms.html', 'welcome.html', 'images/meet-gh-brand.png', 'images/welcome-heart-bg.jpg'];
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', (e) => {
@@ -16,17 +16,28 @@ self.addEventListener('fetch', (e) => {
 
 
 self.addEventListener('push', (event) => {
-  let data={title:'Meet GH',body:'You have a new update.',url:'/'};
-  try { if(event.data) data={...data,...event.data.json()}; } catch (_) { if(event.data) data.body=event.data.text(); }
-  event.waitUntil(self.registration.showNotification(data.title||'Meet GH',{
-    body:data.body||'You have a new update.',icon:'icon-192.png',badge:'icon-192.png',
-    tag:data.tag||'meetgh-update',silent:false,data:{url:data.url||'/'}
-  }));
+  let data = { title: 'Meet GH', body: 'You have a new update.', url: '/', tag: 'meetgh-update', ring: false };
+  try { if (event.data) data = { ...data, ...event.data.json() }; } catch (_) { if (event.data) data.body = event.data.text(); }
+  event.waitUntil((async () => {
+    const list = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+    // The app is open and visible: it shows its own in-app alerts, so skip the system notification.
+    if (list.some((c) => c.visibilityState === 'visible')) { list.forEach((c) => c.postMessage({ type: 'push', data })); return; }
+    await self.registration.showNotification(data.title || 'Meet GH', {
+      body: data.body || 'You have a new update.', icon: 'icon-192.png', badge: 'icon-192.png',
+      tag: data.tag || 'meetgh-update', renotify: true, silent: false,
+      requireInteraction: !!data.ring, vibrate: data.ring ? [300, 150, 300, 150, 300, 150, 300] : [120],
+      data: { url: data.url || '/' }
+    });
+  })());
 });
-self.addEventListener('notificationclick',(event)=>{
-  event.notification.close(); const target=new URL(event.notification.data?.url||'/',self.location.origin).href;
-  event.waitUntil(clients.matchAll({type:'window',includeUncontrolled:true}).then(list=>{
-    const match=list.find(c=>new URL(c.url).origin===self.location.origin);
-    if(match){match.navigate(target);return match.focus();} return clients.openWindow(target);
-  }));
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const target = new URL(event.notification.data?.url || '/', self.location.origin);
+  const isAdmin = target.pathname.startsWith('/admin');
+  event.waitUntil((async () => {
+    const list = await clients.matchAll({ type: 'window', includeUncontrolled: true });
+    const match = list.find((c) => { const u = new URL(c.url); return u.origin === self.location.origin && u.pathname.startsWith('/admin') === isAdmin; });
+    if (match) { await match.focus(); if (!isAdmin) match.postMessage({ type: 'open', url: target.href }); return; }
+    return clients.openWindow(target.href);
+  })());
 });
