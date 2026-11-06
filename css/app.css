@@ -641,3 +641,48 @@ input::placeholder,textarea::placeholder{color:#B58D99}
 .pushsheet{position:absolute;left:0;right:0;bottom:0;z-index:60;padding:14px;background:linear-gradient(to top,rgba(0,0,0,.35),transparent)}
 .pushsheet-card{background:var(--surface);border:1px solid var(--line);border-radius:20px;padding:16px;display:flex;flex-direction:column;gap:10px;box-shadow:0 12px 32px rgba(0,0,0,.25)}
 .pushsheet-card .row{gap:10px;flex-wrap:wrap}
+
+
+/* Timeline hero — elevated, romantic editorial treatment */
+.ak-timeline-hero{
+  height:296px;
+  min-height:296px;
+  padding:0 22px 34px;
+  background-position:center 42%;
+  background-size:cover;
+}
+.ak-timeline-hero:before{
+  background:
+    linear-gradient(90deg,rgba(12,17,24,.48) 0%,rgba(12,17,24,.12) 78%),
+    linear-gradient(180deg,rgba(15,18,27,.04) 0%,rgba(28,19,27,.16) 48%,rgba(18,13,20,.68) 100%);
+}
+.ak-timeline-hero:after{
+  background:linear-gradient(180deg,rgba(4,15,17,0) 0%,rgba(4,15,17,.02) 58%,var(--surface) 100%);
+}
+.ak-timeline-hero .ak-page-hero-copy{
+  max-width:min(92%,560px);
+  padding-bottom:3px;
+  text-shadow:0 3px 22px rgba(0,0,0,.42);
+}
+.ak-timeline-hero .ak-hero-kicker{
+  font-size:10px;
+  letter-spacing:.22em;
+  color:#f0cf9c;
+  margin-bottom:9px;
+}
+.ak-timeline-hero h1{
+  font-size:clamp(29px,8vw,40px);
+  line-height:1.04;
+  letter-spacing:-.045em;
+  margin-bottom:9px;
+}
+.ak-timeline-hero p{
+  max-width:340px;
+  font-size:13px;
+  line-height:1.55;
+  color:rgba(255,255,255,.91);
+}
+@media(max-width:360px){
+  .ak-timeline-hero{height:270px;min-height:270px;padding:0 16px 29px;}
+  .ak-timeline-hero h1{font-size:29px;}
+}
