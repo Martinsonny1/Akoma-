@@ -26,7 +26,7 @@
     t_match: svg('<circle cx="9" cy="12" r="5"/><circle cx="15" cy="12" r="5"/>'),
     t_chat: svg('<path d="M5 5h14v10H10l-5 4z"/>')
   };
-  const INTERESTS = ['Fitness', 'Travel', 'Cooking', 'Music', 'Dancing', 'Reading', 'Football', 'Hiking', 'Fashion', 'Food', 'Running', 'Church'];
+  const INTERESTS = ['hookup', 'dating', 'overnight', 'short', 'multiple days', 'Escort', 'FFM', 'FMM','Sugar Daddies' ,'sugar Mummies', 'Sugar Babies', 'BDSM', 'Older Women', 'Older Men', 'Younger Women' , 'Younger Men' , 'Free Sex'];
   const CITIES = ['Accra', 'Tema', 'Kumasi', 'Cape Coast', 'Takoradi', 'Tamale'];
   const LOOKING = ['Friendship first', 'Dating', 'Serious relationship'];
   const NETWORKS = ['MTN MoMo', 'Telecel Cash', 'AT Money'];
