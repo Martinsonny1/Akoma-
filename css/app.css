@@ -716,3 +716,31 @@ body{
   body{padding:20px !important;gap:10px;}
   .phone{height:min(calc(100dvh - 90px),960px) !important;border-radius:28px !important;border:1px solid var(--line) !important;}
 }
+
+
+/* Call history: compact full-height layout and clear participant details */
+#tabs[hidden], .tabs[hidden]{display:none!important}
+.call-history-page{gap:18px;padding-top:18px;padding-bottom:max(22px,env(safe-area-inset-bottom,0px));}
+.call-history-intro{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:2px 2px 4px;}
+.call-history-intro p{margin-left:auto;text-align:right;}
+.call-day{display:flex;flex-direction:column;gap:8px;}
+.call-day>h3{font-size:14px;color:var(--muted);letter-spacing:.04em;padding:0 2px;}
+.call-list{display:flex;flex-direction:column;gap:8px;}
+.call-row{display:flex;align-items:center;gap:12px;padding:12px;background:var(--surface);border:1px solid var(--line);border-radius:18px;box-shadow:0 5px 18px rgba(60,28,43,.045);min-width:0;}
+.call-person,.call-info{border:0;background:none;padding:0;text-align:left;cursor:pointer;}
+.call-person{flex:none;border-radius:50%;}
+.call-info{display:flex;flex:1;min-width:0;flex-direction:column;gap:3px;}
+.call-info b{font-size:15px;line-height:1.25;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;}
+.call-meta{display:flex;align-items:center;gap:5px;color:var(--muted);font-size:12px;}
+.call-meta svg{width:14px;height:14px;}
+.call-meta.is-missed{color:var(--danger);}
+.call-info small{font-size:11px;color:var(--muted);}
+.call-direction{font-size:14px;font-weight:800;line-height:1;}
+.call-direction.incoming{color:var(--good);}
+.call-direction.outgoing{color:var(--brand);}
+.call-direction.missed{color:var(--danger);}
+.call-again{width:40px;height:40px;color:var(--brand);}
+.call-again svg{width:17px;height:17px;}
+.call-empty{min-height:220px;display:flex;align-items:center;justify-content:center;text-align:center;gap:10px;padding:28px;}
+.call-empty-icon{width:54px;height:54px;border-radius:50%;display:grid;place-items:center;background:var(--tint);color:var(--brand);font-size:24px;}
+@media(max-width:460px){.call-history-page{padding-left:18px;padding-right:18px}.call-row{padding:11px}.call-history-intro{align-items:flex-start;flex-direction:column;gap:4px}.call-history-intro p{margin:0;text-align:left}}
