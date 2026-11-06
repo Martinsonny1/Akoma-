@@ -802,8 +802,8 @@
         S.pushOn = want; render(); // slide immediately; undo if it fails
         try {
           if (want) await API.enablePush(); else await API.disablePush();
-          toast(want ? 'Push alerts are on for this device.' : 'Push alerts are off for this device.');
-        } catch (e) { S.pushOn = !want; render(); toast(U.friendly(e)); }
+          toast(want ? 'Push alerts are on for this device.' : 'Push alerts are off for this device.'); render();
+        } catch (e) { S.pushOn = !want; toast(U.friendly(e)); render(); }
         return;
       }
       case 'soundtoggle': {
