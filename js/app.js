@@ -793,9 +793,9 @@
       case 'editsave': {
         const bio = $('#ebio').value.trim();
         if (U.hasContact(bio) || U.hasMoney(bio)) { const e = $('#eerr'); e.textContent = U.friendly(new Error('bio_not_allowed')); e.hidden = false; return; }
-        return guard(async () => { await API.updateProfile({ bio, city: $('#ect').value, interests: S.editInterests || S.me.interests, looking_for: S.editLooking || S.me.looking_for }); S.me = await API.me(); toast('Changes submitted for review. Your current profile stays visible until approval.'); S.hist.pop(); await go('me', { back: true }); });
+        return guard(async () => { await API.updateProfile({ bio, city: $('#ect').value, interests: S.editInterests || S.me.interests, looking_for: S.editLooking || S.me.looking_for }); S.me = await API.me(); toast('Profile updated.'); S.hist.pop(); await go('me', { back: true }); });
       }
-      case 'rmphoto': return guard(async () => { await API.removePhoto(+id); S.me = await API.me(); toast('Photo removal submitted for moderator review.'); });
+      case 'rmphoto': return guard(async () => { await API.removePhoto(+id); S.me = await API.me(); toast('Photo removed.'); });
       case 'pushenable': return guard(async () => { await API.enablePush(); toast('This device is subscribed to push alerts.'); });
       case 'soundtoggle': {
         const p = window.AkomaSounds && window.AkomaSounds.preferences();
@@ -874,7 +874,7 @@
       else if (t.id === 'pending-selfie') { await guard(async () => { const blob = await shrink(files[0], 'verify'); await API.uploadVerification('selfie', blob); await API.submitSelfieVerification(); S.me = await API.me(); toast('Your selfie was submitted for private review.'); await route(); }); t.value = ''; }
       else if (t.id === 'slotfile') { for (const f of files.slice(0, 6 - S.onb.photos.length)) { const blob = await shrink(f); S.onb.photos.push({ blob, preview: await U.blobToDataURL(blob) }); } render(); }
       else if (t.id === 'pimg') { S.draft.text = ($('#ptxt') || {}).value || S.draft.text; S.draft.blob = await shrink(files[0]); S.draft.preview = await U.blobToDataURL(S.draft.blob); S.draft.err = ''; render(); }
-      else if (t.id === 'editphoto') { await guard(async () => { for (const f of files.slice(0, 6 - S.me.photos.length)) await API.addPhoto(await shrink(f)); S.me = await API.me(); toast('New photos submitted for moderator review.'); }); }
+      else if (t.id === 'editphoto') { await guard(async () => { for (const f of files.slice(0, 6 - S.me.photos.length)) await API.addPhoto(await shrink(f)); S.me = await API.me(); toast('Photos updated.'); }); }
       else if (t.id === 'chatfile' || t.id === 'chatcamera') { await stageFiles(files); t.value = ''; }
       else if (t.id === 'vaultfile') { await guard(async()=>{ for(const f of files.slice(0,8)) await API.uploadVault(f); S.vault=await API.vaultAssets(); toast('Private photos added to your Vault.'); render(); }); t.value=''; }
     } catch (err) { toast(U.friendly(err)); render(); }

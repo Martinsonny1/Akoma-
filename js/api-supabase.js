@@ -223,8 +223,6 @@
       const me = await ensureMe();
       const path = me.photoPaths[index]; if (!path) return;
       await ok(sb.from('profiles').update({ photos: me.photoPaths.filter((_, i) => i !== index) }).eq('id', uid()));
-      // The profile-edit review trigger holds the old public photo set until approval;
-      // keep the object in storage so the still-visible version does not break.
     },
     async uploadVerification(kind, blob) {
       if (kind !== 'selfie') throw new Error('ID verification is not used on Akoma.');
