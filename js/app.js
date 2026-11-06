@@ -182,7 +182,7 @@
 
     discover: () => {
       const grid = true;
-      const head = bar('Discover', { noback: true, right: `<button class="icon-btn" data-go="filters" aria-label="Filters">${ic.filter}</button>${meBtn()}` });
+      const head = bar('Discover', { noback: true, right: `<button class="icon-btn" data-go="filters" aria-label="Filters">${ic.filter}</button><button class="theme-control" id="themeToggle" type="button" aria-label="Switch theme" aria-pressed="false"><span class="theme-control-icon" aria-hidden="true">☀</span><span class="theme-control-label">Light</span></button>${meBtn()}` });
       if (S.loading && !S.profiles.length) return head + loadingBox();
       const eligible = S.profiles.filter((p) => grid || !(p.passed || p.is_match || p.request_sent));
       const featured = S.profiles.filter((p) => p.featured === true || p.featured === 'true' || p.is_featured === true).slice(0, 10);
