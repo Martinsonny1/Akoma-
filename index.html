@@ -23,12 +23,6 @@
 <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
-<div class="theme-control-wrap">
-  <button class="theme-control" id="themeToggle" type="button" aria-label="Switch to light theme" aria-pressed="false">
-    <span class="theme-control-icon" aria-hidden="true">☀</span>
-    <span class="theme-control-label">Light theme</span>
-  </button>
-</div>
 <div class="phone" id="phone">
   <div id="demobar" class="demo-note" hidden></div>
   <div id="screen"></div>
@@ -37,21 +31,23 @@
 <script>
 (() => {
   const root = document.documentElement;
-  const button = document.getElementById('themeToggle');
-  if (!button) return;
   const sync = () => {
+    const button = document.getElementById('themeToggle');
+    if (!button) return;
     const light = root.dataset.theme === 'light';
     button.setAttribute('aria-pressed', String(light));
     button.setAttribute('aria-label', light ? 'Switch to dark theme' : 'Switch to light theme');
     button.querySelector('.theme-control-icon').textContent = light ? '☾' : '☀';
-    button.querySelector('.theme-control-label').textContent = light ? 'Dark theme' : 'Light theme';
+    button.querySelector('.theme-control-label').textContent = light ? 'Dark' : 'Light';
   };
-  button.addEventListener('click', () => {
+  document.addEventListener('click', (event) => {
+    if (!event.target.closest('#themeToggle')) return;
     const next = root.dataset.theme === 'light' ? 'dark' : 'light';
     root.dataset.theme = next;
     try { localStorage.setItem('meetgh-theme', next); } catch (_) {}
     sync();
   });
+  document.addEventListener('DOMContentLoaded', sync);
   sync();
 })();
 </script>
