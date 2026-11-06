@@ -182,7 +182,7 @@
     },
     async updateProfile(patch) {
       const allowed = {};
-      ['city', 'bio', 'interests', 'looking_for', 'hide_photo', 'hide_from_contacts', 'notifications', 'online_visible'].forEach((k) => { if (patch[k] !== undefined) allowed[k] = patch[k]; });
+      ['city', 'bio', 'interests', 'looking_for', 'hide_photo', 'hide_from_contacts', 'notifications', 'notify_messages', 'notify_matches', 'notify_calls', 'notify_social', 'online_visible'].forEach((k) => { if (patch[k] !== undefined) allowed[k] = patch[k]; });
       await ok(sb.from('profiles').update(allowed).eq('id', uid()));
       if (patch.notifications === false) await sb.from('push_subscriptions').delete().eq('user_id',uid());
     },

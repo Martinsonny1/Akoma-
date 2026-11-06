@@ -188,7 +188,7 @@
     async updateProfile(patch) {
       await wait();
       const m = meRow(); if (!m) throw new Error('not_allowed');
-      ['name', 'age', 'city', 'bio', 'interests', 'looking_for', 'hide_photo', 'hide_from_contacts', 'notifications', 'online_visible'].forEach((k) => { if (patch[k] !== undefined) m[k] = patch[k]; });
+      ['name', 'age', 'city', 'bio', 'interests', 'looking_for', 'hide_photo', 'hide_from_contacts', 'notifications', 'notify_messages', 'notify_matches', 'notify_calls', 'notify_social', 'online_visible'].forEach((k) => { if (patch[k] !== undefined) m[k] = patch[k]; });
       save();
     },
     async setLocation(lat, lng, enabled) {

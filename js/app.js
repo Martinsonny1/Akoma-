@@ -377,7 +377,7 @@
       const tg = (k, title, sub) => `<button class="toggle" role="switch" aria-checked="${!!m[k]}" data-act="set" data-id="${k}"><span><b>${title}</b>${sub ? `<span class="muted small" style="display:block">${sub}</span>` : ''}</span><span class="sw"></span></button>`;
       return `${bar('Settings')}<div class="pad">${m.status === 'guest' ? `<div class="card stack"><b>Unlock your full Meet GH account</b><p class="muted small">You can complete selfie verification at any time. No ID is required.</p>${fileLabel('pending-selfie', 'Verify with selfie', 'capture="user"')}</div>` : ''}<div class="list">
         ${isW() ? tg('hide_photo', 'Hide my profile photo', 'Only people you match with can see it') : ''}
-        ${tg('hide_from_contacts', 'Hide me from my phone contacts')}${tg('notifications', 'Notifications')}<button class="toggle" role="switch" aria-checked="${!!S.pushOn}" data-act="pushenable"><span><b>Push alerts</b><span class="muted small" style="display:block">Receive alerts when Meet GH is not open (once push delivery is configured)</span></span><span class="sw"></span></button>
+        ${tg('hide_from_contacts', 'Hide me from my phone contacts')}${tg('notifications', 'Notifications')}${tg('notify_messages', 'Messages', 'New messages, photos and voice notes')}${tg('notify_matches', 'Matches and requests')}${tg('notify_calls', 'Calls', 'Incoming and missed calls')}${tg('notify_social', 'Likes and comments', 'On your timeline posts')}<button class="toggle" role="switch" aria-checked="${!!S.pushOn}" data-act="pushenable"><span><b>Push alerts</b><span class="muted small" style="display:block">Receive alerts when Meet GH is not open (once push delivery is configured)</span></span><span class="sw"></span></button>
         <div class="card stack" style="margin:12px 0">
           <div><b>Sound settings</b><p class="muted small">Choose which sounds Meet GH plays on this device.</p></div>
           ${soundToggle('calls', 'Call sounds', 'Ringtones, ringback and call connection sounds')}
@@ -490,6 +490,7 @@
     if (S.me.status === 'guest' || S.me.status === 'pending') { S.f = { min: 18, max: 99 }; return go('discover', { reset: true }); }
     if (S.me.role === 'woman') { try { S.reqs = await API.requests(); } catch (e) { /* badge only */ } }
     S.f = { min: 18, max: 99 };
+    setTimeout(maybePromptPush, 1500);
     return go('discover', { reset: true });
   }
 
@@ -848,9 +849,15 @@
         return guard(async () => { await API.updateProfile({ bio, city: $('#ect').value, interests: S.editInterests || S.me.interests, looking_for: S.editLooking || S.me.looking_for }); S.me = await API.me(); toast('Profile updated.'); S.hist.pop(); await go('me', { back: true }); });
       }
       case 'rmphoto': return guard(async () => { await API.removePhoto(+id); S.me = await API.me(); toast('Photo removed.'); });
+      case 'pushsheet_on': {
+        closePushSheet(); store.del(PUSH_OFF);
+        try { await API.enablePush(); S.pushOn = true; toast('Notifications are on.'); } catch (e) { toast(U.friendly(e)); }
+        return render();
+      }
+      case 'pushsheet_later': closePushSheet(); store.set(PUSH_SNOOZE, String(Date.now() + 3 * 864e5)); return;
       case 'pushenable': {
         if (!API.enablePush) return toast('Push alerts are not available in demo mode.');
-        const want = !S.pushOn;
+        const want = !S.pushOn; if (want) store.del(PUSH_OFF); else store.set(PUSH_OFF, '1');
         S.pushOn = want; render(); // slide immediately; undo if it fails
         try {
           if (want) await API.enablePush(); else await API.disablePush();
@@ -942,6 +949,61 @@
     } catch (err) { toast(U.friendly(err)); render(); }
   });
 
+  // ---------------------------------------------------------------- push notifications: prompt + deep links
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch (_) { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch (_) {} },
+    del(k) { try { localStorage.removeItem(k); } catch (_) {} }
+  };
+  const PUSH_OFF = 'meetgh_push_off', PUSH_SNOOZE = 'meetgh_push_snooze';
+  const pushSupported = () => 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+  function closePushSheet() { const d = $('#pushsheet'); if (d) d.remove(); }
+  function showPushSheet() {
+    if ($('#pushsheet')) return;
+    const d = document.createElement('div'); d.id = 'pushsheet'; d.className = 'pushsheet';
+    d.innerHTML = `<div class="pushsheet-card" role="dialog" aria-label="Turn on notifications"><b>Don't miss a thing 🔔</b>
+      <p class="muted small">Get told when someone messages you, you match, a call comes in, or someone likes or comments on your post, even when Meet GH is closed.</p>
+      <div class="row"><button class="btn primary" data-act="pushsheet_on">Turn on notifications</button><button class="btn ghost" data-act="pushsheet_later">Not now</button></div></div>`;
+    $('#phone').appendChild(d);
+  }
+  // Asks once per few days. If the browser already allows notifications, it quietly subscribes this device instead.
+  async function maybePromptPush() {
+    try {
+      if (DEMO || !S.me || S.me.isAdmin || !API.pushStatus || !pushSupported()) return;
+      if (S.me.notifications === false) return;
+      if (await API.pushStatus()) { S.pushOn = true; return; }
+      if (Notification.permission === 'denied') return;
+      if (Notification.permission === 'granted') {
+        if (store.get(PUSH_OFF) === '1') return;
+        await API.enablePush(); S.pushOn = true; return;
+      }
+      if (Date.now() < (+store.get(PUSH_SNOOZE) || 0)) return;
+      showPushSheet();
+    } catch (_) { /* never block the app over notifications */ }
+  }
+  // Opens the screen a notification points to: chat:<id>, post:<id>, likes, vault.
+  async function openDeepLink(spec) {
+    if (!spec || !S.me || S.me.isAdmin) return;
+    const [kind, id] = String(spec).split(':'); const approved = S.me.status === 'approved';
+    try {
+      if (kind === 'chat' && approved) return await openChat(id);
+      if (kind === 'post') {
+        S.feed = await API.feed(); const p = S.feed.find((x) => x.id === id);
+        if (!p) { toast('That post is no longer available'); return render(); }
+        S.pv = { post: p, comments: null, text: '' }; return await go('postview', { reset: true });
+      }
+      if (kind === 'likes' && approved) return await go('likes', { reset: true });
+      if (kind === 'vault' && approved) return await go('vault', { reset: true });
+    } catch (e) { toast(U.friendly(e)); render(); }
+  }
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.addEventListener('message', (e) => {
+      const d = e.data || {};
+      if (d.type === 'open') { try { openDeepLink(new URL(d.url, location.origin).searchParams.get('open')); } catch (_) {} }
+      else if (d.type === 'push' && S.me && S.me.status === 'approved' && API.notificationCounts) { refreshNotifications().then(() => { if (MAIN.includes(S.screen)) render(); }).catch(() => {}); }
+    });
+  }
+
   // ---------------------------------------------------------------- start
   (async function start() {
     render();
@@ -950,6 +1012,9 @@
       window.dispatchEvent(new Event('akoma:ready'));
       if (API.session()) {
         await route();
+        const openSpec = new URLSearchParams(location.search).get('open');
+        if (openSpec) { try { history.replaceState(null, '', location.pathname); } catch (_) {} await openDeepLink(openSpec); }
+        setTimeout(maybePromptPush, 1500);
         try { await API.heartbeat(); } catch (_) {}
         window.setInterval(() => { if (API.session() && document.visibilityState === 'visible') API.heartbeat().catch(() => {}); }, 120000);
         window.setInterval(async () => {
