@@ -1,5 +1,5 @@
 // Keeps the app shell available when the connection is weak. Live data is never cached.
-const CACHE = 'meetgh-shell-v19-profile-edits';
+const CACHE = 'meetgh-shell-v20-push-toggle';
 const SHELL = ['./', 'index.html', 'css/app.css', 'js/config.js', 'js/shared.js', 'js/api-demo.js', 'js/api-supabase.js', 'js/api.js', 'js/app.js', 'js/calls.js', 'icon.svg', 'manifest.webmanifest', 'privacy.html', 'terms.html', 'welcome.html', 'images/meet-gh-brand.png', 'images/welcome-heart-bg.jpg'];
 self.addEventListener('install', (e) => { e.waitUntil(caches.open(CACHE).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting())); });
 self.addEventListener('activate', (e) => {
