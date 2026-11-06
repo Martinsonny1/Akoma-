@@ -13,6 +13,7 @@
 <meta property="og:title" content="Meet GH — Meet with intention">
 <meta property="og:description" content="A safer, verified dating and social community for adults in Ghana. Free for everyone.">
 <meta name="color-scheme" content="light dark">
+<script>try{document.documentElement.dataset.theme=localStorage.getItem("meetgh-theme")||"dark"}catch(_){document.documentElement.dataset.theme="dark"}</script>
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="apple-touch-icon" href="icon-192.png">
@@ -22,11 +23,38 @@
 <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
+<div class="theme-control-wrap">
+  <button class="theme-control" id="themeToggle" type="button" aria-label="Switch to light theme" aria-pressed="false">
+    <span class="theme-control-icon" aria-hidden="true">☀</span>
+    <span class="theme-control-label">Light theme</span>
+  </button>
+</div>
 <div class="phone" id="phone">
   <div id="demobar" class="demo-note" hidden></div>
   <div id="screen"></div>
   <nav class="tabs" id="tabs" hidden aria-label="Main"></nav>
 </div>
+<script>
+(() => {
+  const root = document.documentElement;
+  const button = document.getElementById('themeToggle');
+  if (!button) return;
+  const sync = () => {
+    const light = root.dataset.theme === 'light';
+    button.setAttribute('aria-pressed', String(light));
+    button.setAttribute('aria-label', light ? 'Switch to dark theme' : 'Switch to light theme');
+    button.querySelector('.theme-control-icon').textContent = light ? '☾' : '☀';
+    button.querySelector('.theme-control-label').textContent = light ? 'Dark theme' : 'Light theme';
+  };
+  button.addEventListener('click', () => {
+    const next = root.dataset.theme === 'light' ? 'dark' : 'light';
+    root.dataset.theme = next;
+    try { localStorage.setItem('meetgh-theme', next); } catch (_) {}
+    sync();
+  });
+  sync();
+})();
+</script>
 <script src="js/config.js"></script>
 <script src="js/shared.js"></script>
 <script src="js/api-demo.js"></script>
