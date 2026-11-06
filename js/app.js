@@ -312,7 +312,27 @@
       ? `<div class="list">${S.matches.map((m) => `<button class="item" data-act="openchat" data-id="${m.id}">${av(m.other, 50)}<div class="grow"><b>${esc(m.other.name)}</b><span class="muted small" style="display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${m.last_body ? esc(m.last_body) : 'Say hello'}</span></div>${m.flagged ? '<span class="badge warn">Flagged</span>' : ''}${S.unread.byChat[m.id] ? `<span class="notify-badge">${S.unread.byChat[m.id] > 99 ? '99+' : S.unread.byChat[m.id]}</span>` : ''}</button>`).join('')}</div>`
       : '<div class="card"><b>No chats yet</b></div>'}</div>`,
 
-    callhistory: () => `${bar('Call history', { right: meBtn() })}<div class="pad"><div class="list">${(S.callHistory || []).map(c => `<div class="item"><div class="grow"><b>${esc(c.name)}</b><span class="muted small" style="display:block">${c.type === 'video' ? 'Video call' : 'Voice call'} · ${esc(c.status)} · ${new Date(c.created_at).toLocaleString()}</span></div><span class="muted small">${c.seconds ? Math.floor(c.seconds/60)+':'+String(c.seconds%60).padStart(2,'0') : c.missed ? 'Missed' : ''}</span></div>`).join('') || '<div class="card"><b>No calls yet</b><p class="muted small">Your voice and video calls will appear here.</p></div>'}</div></div>`,
+    callhistory: () => {
+      const calls = S.callHistory || [];
+      const groups = calls.reduce((out, c) => {
+        const d = new Date(c.created_at); const today = new Date();
+        const day = new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+        const todayKey = new Date(today.getFullYear(), today.getMonth(), today.getDate()).getTime();
+        const label = day === todayKey ? 'Today' : day === todayKey - 86400000 ? 'Yesterday' : 'Earlier';
+        (out[label] ||= []).push(c); return out;
+      }, {});
+      const rows = Object.entries(groups).map(([label, items]) => `<section class="call-day"><h3>${label}</h3><div class="call-list">${items.map(c => {
+        const missed = c.missed; const incoming = c.direction === 'incoming';
+        const kind = c.type === 'video' ? 'Video call' : 'Voice call';
+        const direction = missed ? 'Missed' : incoming ? 'Incoming' : 'Outgoing';
+        const time = new Date(c.created_at).toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});
+        const duration = c.seconds ? `${Math.floor(c.seconds/60)}:${String(c.seconds%60).padStart(2,'0')}` : '';
+        const icon = c.type === 'video' ? ic.cam : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.9v3a2 2 0 0 1-2.2 2A19.8 19.8 0 0 1 11.2 18a19.5 19.5 0 0 1-6-6A19.8 19.8 0 0 1 2.1 3.2 2 2 0 0 1 4.1 1h3a2 2 0 0 1 2 1.7l.5 2.8a2 2 0 0 1-.6 1.9L7.7 8.7a16 16 0 0 0 6 6l1.3-1.3a2 2 0 0 1 1.9-.6l2.8.5a2 2 0 0 1 1.7 2z"/></svg>';
+        const directionIcon = missed ? '<span class="call-direction missed">↙</span>' : incoming ? '<span class="call-direction incoming">↙</span>' : '<span class="call-direction outgoing">↗</span>';
+        return `<div class="call-row"><button class="call-person" data-act="open" data-id="${esc(c.user_id || '')}" ${c.user_id ? '' : 'disabled'} aria-label="View ${esc(c.name)}">${av({id:c.user_id,name:c.name,photos:c.photos,photo_hidden:c.photo_hidden},52)}</button><button class="call-info" data-act="open" data-id="${esc(c.user_id || '')}" ${c.user_id ? '' : 'disabled'}><b>${esc(c.name)}</b><span class="call-meta ${missed ? 'is-missed' : ''}">${directionIcon}${kind} · ${direction}</span><small>${time}${duration ? ` · ${duration}` : ''}</small></button><button class="icon-btn call-again" data-act="callagain" data-id="${esc(c.user_id || '')}" ${S.matches.some(m => m.other.id === c.user_id) ? '' : 'disabled'} aria-label="Call ${esc(c.name)} back" title="Call back">${icon}</button></div>`;
+      }).join('')}</div></section>`).join('');
+      return `${bar('Call history', { right: meBtn() })}<div class="pad call-history-page"><div class="call-history-intro"><span class="badge">RECENT ACTIVITY</span><p class="muted small">Your voice and video conversations</p></div>${rows || '<div class="card call-empty"><div class="call-empty-icon">☎</div><b>No calls yet</b><p class="muted small">Your voice and video calls will appear here when you connect with someone.</p></div>'}</div>`;
+    },
 
     chat: () => {
       const c = S.chat; if (!c) return loadingBox();
@@ -746,6 +766,13 @@
       // browsing
       case 'dview': S.dview = id; return render();
       case 'open': return openCard(id);
+      case 'callagain': {
+        const match = S.matches.find(m => m.other.id === id);
+        if (!match) { toast('You can call this person from an active matched chat.'); return render(); }
+        await openChat(match.id);
+        if (S.screen === 'chat' && window.AkomaCalls) window.AkomaCalls.start('audio');
+        return;
+      }
       case 'gal': S.gal = +id; return render();
       case 'pass': { const p = S.profiles.find((x) => x.id === id); if (p) p.passed = true; render(); try { await API.passProfile(id); } catch (e) { /* local skip is enough */ } return; }
       case 'like': {

@@ -156,10 +156,22 @@
     },
     async callHistory() {
       const rows = await ok(sb.from('calls').select('*').order('created_at',{ascending:false}).limit(100));
-      const ids = [...new Set(rows.map(r => r.caller_id === uid() ? r.recipient_id : r.caller_id))];
-      const people = ids.length ? await ok(sb.from('profiles').select('id,name').in('id',ids)) : [];
-      const names = new Map(people.map(p=>[p.id,p.name]));
-      return rows.map(r=>({id:r.id,name:names.get(r.caller_id===uid()?r.recipient_id:r.caller_id)||'Akoma member',type:r.call_type,status:r.status,created_at:r.created_at,seconds:r.accepted_at&&r.ended_at?Math.max(0,Math.round((new Date(r.ended_at)-new Date(r.accepted_at))/1000)):0,missed:r.status==='missed'||r.status==='declined'}));
+      const ids = [...new Set(rows.map(r => r.caller_id === uid() ? r.recipient_id : r.caller_id).filter(Boolean))];
+      const people = ids.length ? await ok(sb.from('profiles').select('id,name,photos,hide_photo').in('id',ids)) : [];
+      const photoPaths = people.map(p => p.photos && p.photos[0]).filter(Boolean);
+      if (photoPaths.length) await urls(photoPaths);
+      const peopleById = new Map(people.map(p => [p.id, p]));
+      return rows.map(r => {
+        const otherId = r.caller_id === uid() ? r.recipient_id : r.caller_id;
+        const person = peopleById.get(otherId) || {};
+        const photoPath = person.photos && person.photos[0];
+        const photoUrl = photoPath ? (urlCache.get('photos/' + photoPath) || {}).url : null;
+        const direction = r.caller_id === uid() ? 'outgoing' : 'incoming';
+        return { id:r.id, user_id:otherId, name:person.name || 'Member', photos:photoUrl ? [photoUrl] : [], photo_hidden:!!person.hide_photo,
+          direction, type:r.call_type, status:r.status, created_at:r.created_at,
+          seconds:r.accepted_at&&r.ended_at?Math.max(0,Math.round((new Date(r.ended_at)-new Date(r.accepted_at))/1000)):0,
+          missed:r.status==='missed'||(r.status==='declined'&&direction==='incoming') };
+      });
     },
 
     // ---- my profile -----------------------------------------------------
