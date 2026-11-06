@@ -182,14 +182,12 @@
     async createProfile(f) {
       await wait();
       if (!(f.age >= 18)) throw new Error('not_allowed');
-      if (U.hasMoney(f.bio) || U.hasContact(f.bio)) throw new Error('bio_not_allowed');
       db.users[sid()] = P(sid(), f.role === 'man' ? 'man' : 'woman', f.name, +f.age, f.city || 'Accra', f.bio || '', f.interests || [], f.looking_for || 'Dating', { status: 'guest', created_at: now() });
       save();
     },
     async updateProfile(patch) {
       await wait();
       const m = meRow(); if (!m) throw new Error('not_allowed');
-      if (patch.bio != null && (U.hasMoney(patch.bio) || U.hasContact(patch.bio))) throw new Error('bio_not_allowed');
       ['name', 'age', 'city', 'bio', 'interests', 'looking_for', 'hide_photo', 'hide_from_contacts', 'notifications', 'online_visible'].forEach((k) => { if (patch[k] !== undefined) m[k] = patch[k]; });
       save();
     },
@@ -378,7 +376,7 @@
         .sort(byNew).slice(0, 60).map((p) => {
           const a = db.users[p.author_id];
           const likes = db.postLikes[p.id] || [];
-          return { id: p.id, author: { id: a.id, name: a.name, age: a.age, photos: canSee(me.id, a) ? a.photos.slice(0, 1) : [], photo_hidden: !canSee(me.id, a) && a.photos.length > 0 }, body: p.body, image: p.image, likes: likes.length, liked: likes.includes(me.id), status: p.status, created_at: p.created_at, mine: p.author_id === me.id };
+          return { id: p.id, author: { id: a.id, name: a.name, age: a.age, photos: canSee(me.id, a) ? a.photos.slice(0, 1) : [], photo_hidden: !canSee(me.id, a) && a.photos.length > 0 }, body: p.body, image: p.image, likes: likes.length, liked: likes.includes(me.id), status: p.status, created_at: p.created_at, comments: (db.comments || []).filter((c) => c.post_id === p.id).length, mine: p.author_id === me.id };
         });
     },
     async createPost(f) {
@@ -391,6 +389,28 @@
       const image = f.blob ? await U.blobToDataURL(f.blob) : null;
       db.posts.push({ id: 'po' + rid(), author_id: me.id, body, image, status: image ? 'pending' : 'visible', created_at: now() });
       save();
+    },
+    async deletePost(id) {
+      await wait(); const me = need(); const p = db.posts.find((x) => x.id === id);
+      if (!p || (p.author_id !== me.id && !isAdminRow(me))) throw new Error('not_allowed');
+      db.posts = db.posts.filter((x) => x.id !== id); db.comments = (db.comments || []).filter((c) => c.post_id !== id); delete db.postLikes[id]; save();
+    },
+    async comments(postId) {
+      await wait(); const me = need(); const p = db.posts.find((x) => x.id === postId);
+      return (db.comments || []).filter((c) => c.post_id === postId && db.users[c.author_id] && !blockedBetween(me.id, c.author_id)).sort((a, b) => new Date(a.created_at) - new Date(b.created_at))
+        .map((c) => { const a = db.users[c.author_id]; return { id: c.id, author: { id: a.id, name: a.name, photos: canSee(me.id, a) ? a.photos.slice(0, 1) : [], photo_hidden: false }, body: c.body, created_at: c.created_at, mine: c.author_id === me.id, canDelete: c.author_id === me.id || (p && p.author_id === me.id) };
+        });
+    },
+    async addComment(postId, body) {
+      await wait(); const me = need(); body = String(body || '').trim();
+      if (!body || body.length > 300) throw new Error('bad_length');
+      db.comments = db.comments || []; db.comments.push({ id: 'cm' + rid(), post_id: postId, author_id: me.id, body, created_at: now() }); save();
+    },
+    async deleteComment(id) { await wait(); db.comments = (db.comments || []).filter((c) => c.id !== id); save(); },
+    async postLikers(postId) {
+      await wait(); const me = need(); const p = db.posts.find((x) => x.id === postId);
+      if (!p || p.author_id !== me.id) throw new Error('not_allowed');
+      return (db.postLikes[postId] || []).map((uid) => db.users[uid]).filter(Boolean).map((a) => ({ id: a.id, name: a.name, age: a.age, photos: canSee(me.id, a) ? a.photos.slice(0, 1) : [], photo_hidden: false }));
     },
     async togglePostLike(id) {
       const me = need(); const l = db.postLikes[id] = db.postLikes[id] || [];
@@ -471,6 +491,7 @@
           recent: db.messages.filter((m) => { const x = db.matches.find((y) => y.id === m.match_id); return x && (x.woman_id === r.reported_id || x.man_id === r.reported_id) && (x.woman_id === r.reporter_id || x.man_id === r.reporter_id); }).slice(-4).map((m) => ({ from: m.sender_id === r.reported_id ? 'reported' : 'reporter', body: m.body, flagged: m.flagged }))
         }));
       },
+      async removeComment(id) { needAdmin(); db.comments = (db.comments || []).filter((c) => c.id !== id); save(); },
       async resolveReport(id, status) { needAdmin(); const r = db.reports.find((x) => x.id === id); if (r) r.status = status; save(); },
       async posts() {
         needAdmin();

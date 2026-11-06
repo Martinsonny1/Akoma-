@@ -386,7 +386,7 @@
       const map = new Map(); rows.flatMap((r) => [r.author_photo, r.image_path]).forEach((p, i) => { if (p) map.set(p, photoUrls[i]); });
       return rows.map((r) => ({
         id: r.id, author: { id: r.author_id, name: r.author_name, age: r.author_age, photos: r.author_photo && map.get(r.author_photo) ? [map.get(r.author_photo)] : [], photo_hidden: false },
-        body: r.body, image: r.image_path ? map.get(r.image_path) || null : null, likes: Number(r.like_count), liked: r.liked, status: r.status, created_at: r.created_at, mine: r.mine
+        body: r.body, image: r.image_path ? map.get(r.image_path) || null : null, likes: Number(r.like_count), liked: r.liked, status: r.status, created_at: r.created_at, mine: r.mine, comments: Number(r.comment_count || 0)
       }));
     },
     async createPost(f) {
@@ -396,6 +396,22 @@
       catch (e) { if (path) await sb.storage.from('photos').remove([path]); throw e; }
     },
     async togglePostLike(id) { return ok(sb.rpc('toggle_post_like', { post: id })); },
+    async deletePost(id) {
+      const img = await ok(sb.rpc('delete_post', { post: id }));
+      if (img) { try { await sb.storage.from('photos').remove([img]); } catch (_) {} }
+    },
+    async comments(postId) {
+      const rows = await ok(sb.rpc('list_comments', { post: postId }));
+      const u = await urls(rows.map((r) => r.author_photo));
+      return rows.map((r, i) => ({ id: r.id, author: { id: r.author_id, name: r.author_name, photos: u[i] ? [u[i]] : [], photo_hidden: false }, body: r.body, created_at: r.created_at, mine: r.mine, canDelete: r.can_delete }));
+    },
+    async addComment(postId, body) { return ok(sb.rpc('add_comment', { post: postId, msg: body })); },
+    async deleteComment(id) { await ok(sb.rpc('delete_comment', { comment_id: id })); },
+    async postLikers(postId) {
+      const rows = await ok(sb.rpc('list_post_likers', { post: postId }));
+      const u = await urls(rows.map((r) => r.photo));
+      return rows.map((r, i) => ({ id: r.user_id, name: r.name, age: r.age, photos: u[i] ? [u[i]] : [], photo_hidden: false, liked_at: r.liked_at }));
+    },
 
     // ---- subscription -----------------------------------------------------------
     async plans() { return ok(sb.from('plans').select('*').order('price_ghs')); },
@@ -468,9 +484,10 @@
             const ms = await ok(sb.from('messages').select('sender_id,body,flagged').eq('match_id', pair[0].id).order('created_at', { ascending: false }).limit(4));
             recent = ms.reverse().map((m) => ({ from: m.sender_id === r.reported_id ? 'reported' : 'reporter', body: m.body, flagged: m.flagged }));
           }
-          return { id: r.id, reason: r.reason, details: r.details, status: r.status, created_at: r.created_at, reporter: brief(r.reporter_id), reported: brief(r.reported_id), recent, target_type:r.target_type||'profile', media_kind:r.target_media_kind, media:reportedMedia };
+          return { id: r.id, reason: r.reason, details: r.details, status: r.status, created_at: r.created_at, reporter: brief(r.reporter_id), reported: brief(r.reported_id), recent, target_type:r.target_type||'profile', target_text:r.target_text||'', target_id:r.target_content_id||null, media_kind:r.target_media_kind, media:reportedMedia };
         }));
       },
+      async removeComment(id) { await ok(sb.rpc('delete_comment', { comment_id: id })); },
       async resolveReport(id, status) { await ok(sb.from('reports').update({ status }).eq('id', id)); },
       async posts() {
         const rows = await ok(sb.from('posts').select('*').eq('status', 'pending').order('created_at', { ascending: false }));

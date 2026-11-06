@@ -12,6 +12,8 @@
     heart: svg('<path d="M12 20.5s-7.5-4.6-7.5-10.2A4.3 4.3 0 0 1 12 7.6a4.3 4.3 0 0 1 7.5 2.7c0 5.6-7.5 10.2-7.5 10.2z"/>'),
     back: svg('<path d="M15 5l-7 7 7 7"/>'),
     x: svg('<path d="M6 6l12 12M18 6L6 18"/>'),
+    trash: svg('<path d="M4 7h16M10 11v6M14 11v6M6 7l1 12a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-12M9 7V4h6v3"/>'),
+    comment: svg('<path d="M4 5h16v11H9l-5 4z"/>'),
     check: svg('<path d="M5 12.5l4.5 4.5L19 7.5"/>', 3),
     shield: svg('<path d="M12 3l7 3v5c0 4.500-3 8-7 10-4-2-7-5.500-7-10V6z"/><path d="M9 12l2 2 4-4"/>', 2.4),
     lock: U.LOCK,
@@ -57,6 +59,24 @@
   const loadingBox = () => '<div class="loading">Loading…</div>';
   function toast(t) { S.toast = t; }
   const openAny = (id) => S.profiles.find((p) => p.id === id) || S.matches.map((m) => m.other).find((p) => p.id === id);
+
+  // One timeline post. In `detail` mode (the post screen) the text/photo are not tappable and the comment chip is hidden.
+  const postCard = (p, detail) => {
+    const a = p.author, canAct = S.me && S.me.status === 'approved';
+    const small = (i) => i.replace('<svg', '<svg style="width:14px;height:14px;vertical-align:-2px;margin-right:5px"');
+    const img = p.image ? (typeof p.image === 'string' ? `<div class="pimg"><img src="${esc(p.image)}" alt="Photo shared by ${esc(a.name)}"></div>` : `<div class="pimg g" style="--h:${p.image.h}"><span>${esc(p.image.label)}</span></div>`) : '';
+    const who = p.mine ? `data-go="me"` : `data-act="open" data-id="${a.id}"`;
+    const content = `${p.body ? `<p>${esc(p.body)}</p>` : ''}${img}`;
+    const likeChip = p.mine
+      ? `<button class="chip" data-act="likers" data-id="${p.id}" aria-label="See who liked this post">${small(ic.heart)}${p.likes}${p.likes ? ' · who liked' : ''}</button>`
+      : canAct ? `<button class="chip" aria-pressed="${p.liked}" data-act="plike" data-id="${p.id}">${small(ic.heart)}${p.likes}</button>` : `<span class="chip">${ic.heart} ${p.likes}</span>`;
+    const cmtChip = detail ? '' : `<button class="chip" data-act="viewpost" data-id="${p.id}" aria-label="Comments">${small(ic.comment)}${p.comments || 0}</button>`;
+    return `<div class="post"><div class="row"><button class="item" style="padding:0;width:auto;background:none;border:0" ${who} aria-label="View ${esc(a.name)}">${av(a, 40)}</button>
+      <div class="grow"><button class="item" style="padding:0;background:none;border:0;display:inline;width:auto" ${who}><b>${esc(a.name)}</b></button> ${vb()}<span class="muted small" style="display:block">${U.timeAgo(p.created_at)}${p.status === 'pending' ? ' · Waiting for review' : ''}</span></div>
+      ${p.mine ? `<button class="icon-btn" data-act="delpost" data-id="${p.id}" aria-label="Delete this post">${ic.trash}</button>` : `<button class="icon-btn" data-act="reportpost" data-id="${p.id}" data-user="${a.id}" aria-label="Report this post">${ic.flag}</button>`}</div>
+      ${detail ? content : `<div data-act="viewpost" data-id="${p.id}" style="cursor:pointer">${content}</div>`}
+      <div class="row">${likeChip}${cmtChip}</div></div>`;
+  };
   function fileLabel(id, text, extra) {
     return `<label class="btn sm ghost" style="cursor:pointer;display:inline-flex;gap:6px;align-items:center">${ic.cam.replace('<svg', '<svg style="width:16px;height:16px"')}${text}<input id="${id}" type="file" accept="image/*" ${extra || ''}></label>`;
   }
@@ -201,15 +221,7 @@
     timeline: () => {
       const d = S.draft;
       const feat = S.profiles.filter((p) => p.featured).slice(0, 8);
-      const posts = S.feed.map((p) => {
-        const a = p.author;
-        const img = p.image ? (typeof p.image === 'string' ? `<div class="pimg"><img src="${esc(p.image)}" alt="Photo shared by ${esc(a.name)}"></div>` : `<div class="pimg g" style="--h:${p.image.h}"><span>${esc(p.image.label)}</span></div>`) : '';
-        return `<div class="post"><div class="row">${p.mine ? av(a, 40) : `<button class="item" style="padding:0;width:auto" data-act="open" data-id="${a.id}" aria-label="View ${esc(a.name)}">${av(a, 40)}</button>`}
-          <div class="grow"><b>${esc(a.name)}</b> ${vb()}<span class="muted small" style="display:block">${U.timeAgo(p.created_at)}${p.status === 'pending' ? ' · Waiting for review' : ''}</span></div>
-          ${p.mine ? '' : `<button class="icon-btn" data-act="reportpost" data-id="${p.id}" data-user="${a.id}" aria-label="Report this post">${ic.flag}</button>`}</div>
-          ${p.body ? `<p>${esc(p.body)}</p>` : ''}${img}
-          <div class="row">${S.me && S.me.status === 'approved' ? `<button class="chip" aria-pressed="${p.liked}" data-act="plike" data-id="${p.id}">${ic.heart.replace('<svg', '<svg style="width:14px;height:14px;vertical-align:-2px;margin-right:5px"')}${p.likes}</button>` : `<span class="chip">${ic.heart} ${p.likes}</span>`}</div></div>`;
-      }).join('');
+      const posts = S.feed.map((p) => postCard(p)).join('');
       const timelineHero = `<section class="ak-page-hero ak-timeline-hero"><div class="ak-page-hero-copy"><span class="ak-hero-kicker">MEET GH · COMMUNITY</span><h1>Moments on Meet GH.</h1><p>Little moments. Real connections.</p></div></section>`;
       return `${bar('Timeline', { noback: true, right: meBtn() })}${timelineHero}<div class="pad" style="padding-top:8px">
         ${S.me && S.me.status !== 'approved' ? `<div class="card stack"><span class="badge warn">${S.me.status === 'pending' ? 'Selfie review pending' : 'Guest account'}</span><p class="muted small">You can read community posts. Selfie approval unlocks posting, likes and other interactions.</p>${S.me.status !== 'pending' ? fileLabel('pending-selfie', 'Verify with selfie', 'capture="user"') : ''}</div>` : ''}
@@ -220,6 +232,27 @@
           <p class="muted small">Photos are checked by a moderator before they appear.</p></div>` : ''}
         ${feat.length ? `<div class="stack"><div class="row" style="justify-content:space-between"><h3>Featured</h3><span class="muted small">Swipe to see more</span></div><div class="hscroll">${feat.map((p) => `<button class="fcard" data-act="open" data-id="${p.id}">${av(p, 68)}<b>${esc(p.name)}, ${p.age}</b><span class="badge gold">Featured</span></button>`).join('')}</div></div>` : ''}
         <div class="stack"><h3>Posts</h3>${S.loading && !S.feed.length ? loadingBox() : posts || '<div class="card"><b>No posts yet</b><p class="muted small">Be the first to share something.</p></div>'}</div></div>`;
+    },
+
+    postview: () => {
+      const v = S.pv; if (!v) return `${bar('Post')}${loadingBox()}`;
+      const canAct = S.me && S.me.status === 'approved';
+      const list = v.comments === null ? loadingBox() : !v.comments.length ? '<p class="muted small" style="padding:8px 0">No comments yet. Be the first to say something kind.</p>'
+        : v.comments.map((c) => {
+          const who = c.mine ? `data-go="me"` : `data-act="open" data-id="${c.author.id}"`;
+          return `<div class="row" style="align-items:flex-start;padding:10px 0;border-top:1px solid var(--line)"><button class="item" style="padding:0;width:auto;background:none;border:0" ${who} aria-label="View ${esc(c.author.name)}">${av(c.author, 34)}</button>
+            <div class="grow"><button class="item" style="padding:0;background:none;border:0;display:inline;width:auto" ${who}><b>${esc(c.author.name)}</b></button> <span class="muted small">${U.timeAgo(c.created_at)}</span>
+              <p style="margin:2px 0 4px;white-space:pre-wrap;word-break:break-word">${esc(c.body)}</p>
+              <div class="row" style="gap:12px">${c.canDelete ? `<button class="chip sm" data-act="delcmt" data-id="${c.id}">Delete</button>` : ''}${c.mine ? '' : `<button class="chip sm" data-act="reportcmt" data-id="${c.id}" data-user="${c.author.id}" data-name="${esc(c.author.name)}">Report</button>`}</div></div></div>`;
+        }).join('');
+      const box = canAct ? `<div class="compose"><textarea id="ctxt" maxlength="300" placeholder="Write a comment">${esc(v.text || '')}</textarea><div class="row" style="justify-content:flex-end"><button class="btn sm primary" data-act="addcmt" data-id="${v.post.id}" ${S.busy ? 'disabled' : ''}>Comment</button></div></div>`
+        : `<div class="card stack"><span class="badge warn">${S.me && S.me.status === 'pending' ? 'Selfie review pending' : 'Guest account'}</span><p class="muted small">You can read comments. Selfie approval unlocks commenting.</p></div>`;
+      return `${bar('Post')}<div class="pad">${postCard(v.post, true)}<b class="small">Comments${v.comments ? ' (' + v.comments.length + ')' : ''}</b>${list}${box}</div>`;
+    },
+
+    likers: () => {
+      const v = S.lk; if (!v || v.list === null) return `${bar('Who liked this')}${loadingBox()}`;
+      return `${bar('Who liked this')}<div class="pad">${!v.list.length ? '<p class="muted">No likes yet.</p>' : v.list.map((u) => `<button class="item" data-act="open" data-id="${u.id}">${av(u, 44)}<span class="grow"><b>${esc(u.name)}${u.age ? ', ' + u.age : ''}</b><span class="muted small" style="display:block">${U.timeAgo(u.liked_at || new Date().toISOString())}</span></span><span>›</span></button>`).join('')}</div>`;
     },
 
     profile: () => {
@@ -292,7 +325,7 @@
     vault: () => `${bar('Private Vault')}<div class="pad"><div class="banner">${ic.lock}<span>Your Vault is private. Only matches you explicitly authorize can view a photo, for the time you choose. A recipient may still capture anything displayed.</span></div><label class="btn primary" style="display:inline-flex;align-items:center;gap:8px">＋ Add private photos<input id="vaultfile" type="file" accept="image/jpeg,image/png,image/webp" multiple hidden></label><p class="muted small">JPEG, PNG or WebP · 8 MB maximum per image</p><div class="list">${(S.vault||[]).map(a=>`<div class="card stack"><div class="row" style="gap:12px">${a.preview ? `<img src="${a.preview}" style="width:76px;height:76px;object-fit:cover;border-radius:12px">` : '<div class="vault-blur">🔒</div>'}<div class="grow"><b>${a.owned?'Your private photo':'Shared private photo'}</b><span class="muted small" style="display:block">${a.owned?(a.grant_id&&!a.revoked_at&&new Date(a.expires_at)>new Date()?'Access granted until '+new Date(a.expires_at).toLocaleTimeString():'Locked by default'):'Access expires '+new Date(a.expires_at).toLocaleTimeString()}</span></div></div>${a.owned?`<div class="row wrap"><select id="vault-match-${a.id}" class="grow">${S.matches.map(m=>`<option value="${m.id}">${esc(m.other.name)}</option>`).join('')}</select><select id="vault-duration-${a.id}"><option value="5">5 min</option><option value="15" selected>15 min</option><option value="30">30 min</option><option value="60">1 hour</option><option value="1440">24 hours</option></select><button class="btn sm primary" data-act="vaultgrant" data-id="${a.id}" ${S.matches.length?'':'disabled'}>Grant access</button><button class="btn sm danger" data-act="vaultdelete" data-id="${a.id}">Delete</button></div>${a.grant_id&&!a.revoked_at&&new Date(a.expires_at)>new Date()?`<button class="btn sm ghost" data-act="vaultrevoke" data-id="${a.grant_id}">Revoke current access</button>`:''}`:''}</div>`).join('')||'<div class="card"><b>Your Vault is empty</b><p class="muted small">Add a private photo to get started.</p></div>'}</div></div>`,
 
     report: () => {
-      const p = openAny(S.rep.target) || { name: 'this person' };
+      const p = openAny(S.rep.target) || { name: S.rep.name || 'this person' };
       return `${bar('Block or report')}<div class="pad"><p class="muted">Tell us what happened with ${esc(p.name)}. A person reviews every report.</p>
         <div class="list">${REASONS.map((r) => `<button class="toggle" role="radio" aria-checked="${S.rep.reason === r}" data-act="reason" data-id="${r}"><span>${r}</span><span class="sw"></span></button>`).join('')}</div>
         <label class="f">Details (optional)<textarea id="rdet" maxlength="500">${esc(S.rep.details)}</textarea></label>
@@ -392,6 +425,8 @@
     async matches() { S.matches = await API.matches(); await refreshNotifications(); await API.markMatchesSeen(); S.unread.matches = 0; },
     async inbox() { S.matches = await API.matches(); await refreshNotifications(); },
     async callhistory() { S.callHistory = await API.callHistory(); },
+    async postview() { if (!S.pv) return; S.pv.comments = await API.comments(S.pv.post.id); S.pv.post.comments = S.pv.comments.length; },
+    async likers() { if (!S.lk) return; S.lk.list = await API.postLikers(S.lk.id); },
     async settings() { if (!DEMO) S.allowIncomingCalls = await API.callSettings(); S.pushOn = API.pushStatus ? await API.pushStatus() : false; },
     async me() { S.me = await API.me(); },
     async edit() { S.me = await API.me(); S.editInterests = null; S.editLooking = null; },
@@ -649,7 +684,7 @@
     try { await fn(); } catch (e) { toast(U.friendly(e)); } finally { S.busy = false; render(); }
   }
 
-  async function act(a, id) {
+  async function act(a, id, el) {
     switch (a) {
       case 'back': return back();
       case 'demo': await API.demoLogin(id); return route();
@@ -693,7 +728,6 @@
       case 'chip': { const b = $('#bio'); if (b) S.onb.bio = b.value; const i = S.onb.interests.indexOf(id); if (i >= 0) S.onb.interests.splice(i, 1); else if (S.onb.interests.length < 12) S.onb.interests.push(id); return render(); }
       case 'biosave': {
         S.onb.bio = $('#bio').value.trim();
-        if (U.hasContact(S.onb.bio) || U.hasMoney(S.onb.bio)) { const e = $('#bioerr'); e.textContent = U.friendly(new Error('bio_not_allowed')); e.hidden = false; return; }
         return go('prefs');
       }
       case 'want': S.onb.looking = id; return render();
@@ -752,6 +786,25 @@
       case 'closemedia': return guard(async()=>{ await API.closeMedia(id); const m=S.msgs.find(x=>String(x.id)===String(id)); if(m){m.media_path=null;m.media_url=null;m.body='Expired media';m.opened_at=new Date().toISOString();} if(S.ephemeral&&String(S.ephemeral.id)===String(id))S.ephemeral=null; drawMsgs(); toast('Media closed and server copy deleted.'); });
       case 'reportmedia': S.rep = { target: S.chat.other.id, contentType: 'message', contentId: id, reason: 'Something else', block: false, details: 'I am reporting this image, video or voice note.' }; return go('report');
       case 'reportprofilephoto': S.rep = { target: el.dataset.user, contentType: 'profile_photo', contentId: id, reason: 'Something else', block: false, details: 'I am reporting this profile photo.' }; return go('report');
+      case 'viewpost': { const p = S.feed.find((x) => x.id === id); if (!p) return; S.pv = { post: p, comments: null, text: '' }; return go('postview'); }
+      case 'likers': { S.lk = { id, list: null }; return go('likers'); }
+      case 'delpost': {
+        if (!window.confirm('Delete this post? This cannot be undone.')) return;
+        return guard(async () => {
+          await API.deletePost(id); S.feed = await API.feed(); toast('Post deleted.');
+          if (S.screen === 'postview') { S.pv = null; S.hist.pop(); await go('timeline', { back: true }); }
+        });
+      }
+      case 'addcmt': {
+        const t = (($('#ctxt') || {}).value || '').trim(); if (S.pv) S.pv.text = t;
+        if (!t) return;
+        return guard(async () => { await API.addComment(id, t); S.pv.text = ''; S.pv.comments = await API.comments(id); S.pv.post.comments = S.pv.comments.length; });
+      }
+      case 'delcmt': {
+        if (!window.confirm('Delete this comment?')) return;
+        return guard(async () => { await API.deleteComment(id); S.pv.comments = await API.comments(S.pv.post.id); S.pv.post.comments = S.pv.comments.length; toast('Comment deleted.'); });
+      }
+      case 'reportcmt': S.rep = { target: el.dataset.user, name: el.dataset.name, contentType: 'comment', contentId: id, reason: 'Something else', block: false, details: '' }; return go('report');
       case 'reportpost': S.rep = { target: el.dataset.user, contentType: 'post', contentId: id, reason: 'Something else', block: false, details: '' }; return go('report');
       case 'voice': return startRecording();
       case 'recpause': return S.rec.state === 'paused' ? resumeRecording() : pauseRecording();
@@ -792,7 +845,6 @@
       case 'ewant': { const b = $('#ebio'); if (b) S.me.bio = b.value; S.editLooking = id; return render(); }
       case 'editsave': {
         const bio = $('#ebio').value.trim();
-        if (U.hasContact(bio) || U.hasMoney(bio)) { const e = $('#eerr'); e.textContent = U.friendly(new Error('bio_not_allowed')); e.hidden = false; return; }
         return guard(async () => { await API.updateProfile({ bio, city: $('#ect').value, interests: S.editInterests || S.me.interests, looking_for: S.editLooking || S.me.looking_for }); S.me = await API.me(); toast('Profile updated.'); S.hist.pop(); await go('me', { back: true }); });
       }
       case 'rmphoto': return guard(async () => { await API.removePhoto(+id); S.me = await API.me(); toast('Photo removed.'); });
@@ -862,7 +914,7 @@
     const t = e.target.closest('[data-tab],[data-go],[data-act]'); if (!t || t.tagName === 'LABEL') return;
     if (t.dataset.tab) return tab(t.dataset.tab);
     if (t.dataset.go) return go(t.dataset.go);
-    act(t.dataset.act, t.dataset.id).catch((err) => { toast(U.friendly(err)); render(); });
+    act(t.dataset.act, t.dataset.id, t).catch((err) => { toast(U.friendly(err)); render(); });
   });
   phone.addEventListener('keydown', (e) => {
     if (e.key !== 'Enter') return;
@@ -871,6 +923,7 @@
   });
   phone.addEventListener('input', (e) => {
     if (e.target.id === 'ptxt') S.draft.text = e.target.value;
+    if (e.target.id === 'ctxt' && S.pv) S.pv.text = e.target.value;
     if (e.target.id === 'rmsg') { S.cmp.text = e.target.value; const c = $('#rc'); if (c) c.textContent = S.cmp.text.length + '/200 · Free to send'; }
   });
   phone.addEventListener('change', async (e) => {
