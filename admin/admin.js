@@ -102,9 +102,9 @@
       const head = `<div class="row wrap"><button class="btn sm ${S.data.rfilter !== 'all' ? 'primary' : ''}" data-act="rfilter" data-id="open">Open (${open.length})</button><button class="btn sm ${S.data.rfilter === 'all' ? 'primary' : ''}" data-act="rfilter" data-id="all">All (${rows.length})</button></div>`;
       if (!filt.length) return head + '<div class="empty">No reports here.</div>';
       return head + filt.map((r) => `<div class="case"><div class="case-head"><h3>${esc(r.reported.name)}</h3>${badgeFor(r.reported.status || 'approved')}<span class="badge ${r.status === 'open' ? 'warn' : ''}">${esc(r.status)}</span><span class="muted small">${esc(r.reason)} · ${date(r.created_at)}</span></div>
-        <p class="small muted">Reported by ${esc(r.reporter.name)}</p>${r.details ? `<p>&ldquo;${esc(r.details)}&rdquo;</p>` : ''}<p class="small muted">Target: ${esc(r.target_type||'profile')}${r.media_kind ? ' · '+esc(r.media_kind) : ''}</p>${r.media ? `<div class="imgs big"><figure>${r.media_kind==='video'?`<video controls playsinline src="${esc(r.media)}" style="width:100%;border-radius:12px"></video>`:r.media_kind==='audio'?`<audio controls src="${esc(r.media)}"></audio>`:`<img src="${esc(r.media)}" alt="Reported content">`}</figure></div>`:''}
+        <p class="small muted">Reported by ${esc(r.reporter.name)}</p>${r.details ? `<p>&ldquo;${esc(r.details)}&rdquo;</p>` : ''}<p class="small muted">Target: ${esc(r.target_type||'profile')}${r.media_kind ? ' · '+esc(r.media_kind) : ''}</p>${r.target_text ? `<p><b>Comment:</b> &ldquo;${esc(r.target_text)}&rdquo;</p>` : ''}${r.media ? `<div class="imgs big"><figure>${r.media_kind==='video'?`<video controls playsinline src="${esc(r.media)}" style="width:100%;border-radius:12px"></video>`:r.media_kind==='audio'?`<audio controls src="${esc(r.media)}"></audio>`:`<img src="${esc(r.media)}" alt="Reported content">`}</figure></div>`:''}
         ${r.recent.length ? `<div class="chat">${r.recent.map((m) => `<div class="${m.from}${m.flagged ? ' flag' : ''}">${esc(m.body)}</div>`).join('')}</div>` : '<p class="small muted">No chat between these two.</p>'}
-        ${r.status === 'open' ? `<div class="actions"><button class="btn danger" data-act="banreport" data-id="${r.id}" data-user="${r.reported.id}">Ban ${esc(r.reported.name)}</button><button class="btn" data-act="dismiss" data-id="${r.id}">Dismiss report</button></div>` : ''}</div>`).join('');
+        ${r.status === 'open' ? `<div class="actions"><button class="btn danger" data-act="banreport" data-id="${r.id}" data-user="${r.reported.id}">Ban ${esc(r.reported.name)}</button>${r.target_type === 'comment' && r.target_id ? `<button class="btn danger" data-act="rmcmt" data-id="${r.id}" data-cid="${r.target_id}">Remove comment</button>` : ''}<button class="btn" data-act="dismiss" data-id="${r.id}">Dismiss report</button></div>` : ''}</div>`).join('');
     },
 
     feedback() {
@@ -203,6 +203,7 @@
       case 'reject': { const sel = document.querySelector(`[data-reason="${id}"]`); await A.setStatus(id, 'rejected', sel ? sel.value : ''); note('Rejected'); return refresh(); }
       case 'rfilter': S.data.rfilter = id; return render();
       case 'banreport': await A.setStatus(el.dataset.user, 'banned', 'Banned after report'); await A.resolveReport(id, 'actioned'); note('User banned'); return refresh();
+      case 'rmcmt': await A.removeComment(el.dataset.cid); await A.resolveReport(id, 'actioned'); note('Comment removed'); return refresh();
       case 'dismiss': await A.resolveReport(id, 'dismissed'); note('Report dismissed'); return refresh();
       case 'postok': await A.moderatePost(id, true); note('Post approved'); return refresh();
       case 'postno': await A.moderatePost(id, false); note('Post removed'); return refresh();
