@@ -25,6 +25,8 @@
   const badgeFor = (st) => `<span class="badge ${st === 'approved' ? 'good' : st === 'pending' ? 'warn' : 'bad'}">${esc(st)}</span>`;
   const date = (iso) => new Date(iso).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' }) + ' ' + U.clock(iso);
   function note(t) { S.toast = t; }
+  // Same service worker as the member app, so admin alerts can arrive while this page is closed.
+  if ('serviceWorker' in navigator && /^https?:$/.test(location.protocol)) { navigator.serviceWorker.register('../sw.js', { scope: '../', updateViaCache: 'none' }).catch(() => {}); }
   function showToast() { if (!S.toast) return; const t = document.createElement('div'); t.className = 'toast'; t.setAttribute('role', 'status'); t.textContent = S.toast; document.body.appendChild(t); S.toast = ''; setTimeout(() => t.remove(), 2600); }
   const dataImg = (url, label) => (url ? `<img src="${esc(url)}" alt="${esc(label)}" loading="lazy">` : `<div class="ph">${DEMO ? 'Sample ' + esc(label) : 'Not uploaded'}</div>`);
 
@@ -46,10 +48,15 @@
     </div>`;
   }
 
+  const pushCanUse = () => !DEMO && API.pushStatus && 'serviceWorker' in navigator && 'PushManager' in window && 'Notification' in window;
+  // Shown until alerts are on, so no admin misses a verification request or report.
+  const pushBanner = () => (pushCanUse() && !S.pushOn && Notification.permission !== 'denied'
+    ? `<div class="banner" style="margin:12px 16px;display:flex;gap:12px;align-items:center;justify-content:space-between;padding:12px 14px;border-radius:12px;background:#fdf1d3;color:#3a2f10;font-size:14px"><span>🔔 Turn on alerts to get notified about new members, verification requests, reports and photo posts, even when this page is closed.</span><button class="btn sm primary" data-act="adminpush">Turn on</button></div>` : '');
+
   function header() {
     const st = S.stats || {};
     const badge = { queue: st.pending, content: st.pendingContent, reports: st.openReports, posts: st.pendingPosts };
-    return `<div class="top"><div class="top-in"><div class="top-row"><h1>Meet GH Admin</h1><div class="row"><span class="small">${esc(S.me.name)}</span><button class="link" data-act="signout">Sign out</button></div></div>
+    return `<div class="top"><div class="top-in"><div class="top-row"><h1>Meet GH Admin</h1><div class="row"><span class="small">${esc(S.me.name)}</span>${pushCanUse() ? `<button class="link" data-act="adminpush">${S.pushOn ? '🔔 Alerts on' : '🔕 Turn on alerts'}</button>` : ''}<button class="link" data-act="signout">Sign out</button></div></div>
       <div class="tabs" role="tablist">${TABS.map((t) => `<button role="tab" aria-selected="${S.tab === t[0]}" data-tab="${t[0]}">${t[1]}${badge[t[0]] ? `<span class="count">${badge[t[0]]}</span>` : ''}</button>`).join('')}</div></div></div>`;
   }
 
@@ -159,7 +166,7 @@
   function render() {
     if (!S.me) { app.innerHTML = loginView(); return; }
     const keep = document.activeElement && document.activeElement.id === 'uq' ? document.activeElement.selectionStart : null;
-    app.innerHTML = header() + `<main>${V[S.tab]()}</main>`;
+    app.innerHTML = header() + pushBanner() + `<main>${V[S.tab]()}</main>`;
     if (keep !== null) { const q = $('#uq'); if (q) { q.focus(); q.setSelectionRange(keep, keep); } }
     showToast();
   }
@@ -189,11 +196,19 @@
       render(); const e = $('#lerr'); if (e) { e.textContent = 'This account is not an admin. Make it one in Supabase (see the setup guide).'; e.hidden = false; }
       return;
     }
+    try { S.pushOn = pushCanUse() ? await API.pushStatus() : false; } catch (_) { S.pushOn = false; }
+    if (pushCanUse() && !S.pushOn && Notification.permission === 'granted') { try { await API.enablePush(); S.pushOn = true; } catch (_) {} }
     await refresh();
   }
 
   async function act(a, id, el) {
     switch (a) {
+      case 'adminpush': {
+        const want = !S.pushOn; S.pushOn = want; render();
+        try { if (want) await API.enablePush(); else await API.disablePush(); note(want ? 'Alerts are on for this device.' : 'Alerts are off for this device.'); }
+        catch (e) { S.pushOn = !want; note(U.friendly(e)); }
+        return render();
+      }
       case 'demoadmin': await API.demoLogin('admin'); return afterLogin();
       case 'signout': await API.signOut(); S.me = null; S.data = {}; return render();
 
