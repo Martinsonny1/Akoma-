@@ -344,7 +344,7 @@
       const tg = (k, title, sub) => `<button class="toggle" role="switch" aria-checked="${!!m[k]}" data-act="set" data-id="${k}"><span><b>${title}</b>${sub ? `<span class="muted small" style="display:block">${sub}</span>` : ''}</span><span class="sw"></span></button>`;
       return `${bar('Settings')}<div class="pad">${m.status === 'guest' ? `<div class="card stack"><b>Unlock your full Meet GH account</b><p class="muted small">You can complete selfie verification at any time. No ID is required.</p>${fileLabel('pending-selfie', 'Verify with selfie', 'capture="user"')}</div>` : ''}<div class="list">
         ${isW() ? tg('hide_photo', 'Hide my profile photo', 'Only people you match with can see it') : ''}
-        ${tg('hide_from_contacts', 'Hide me from my phone contacts')}${tg('notifications', 'Notifications')}<button class="toggle" data-act="pushenable"><span><b>Enable push alerts</b><span class="muted small" style="display:block">Receive alerts when Meet GH is not open (once push delivery is configured)</span></span><span class="sw"></span></button>
+        ${tg('hide_from_contacts', 'Hide me from my phone contacts')}${tg('notifications', 'Notifications')}<button class="toggle" role="switch" aria-checked="${!!S.pushOn}" data-act="pushenable"><span><b>Push alerts</b><span class="muted small" style="display:block">Receive alerts when Meet GH is not open (once push delivery is configured)</span></span><span class="sw"></span></button>
         <div class="card stack" style="margin:12px 0">
           <div><b>Sound settings</b><p class="muted small">Choose which sounds Meet GH plays on this device.</p></div>
           ${soundToggle('calls', 'Call sounds', 'Ringtones, ringback and call connection sounds')}
@@ -392,7 +392,7 @@
     async matches() { S.matches = await API.matches(); await refreshNotifications(); await API.markMatchesSeen(); S.unread.matches = 0; },
     async inbox() { S.matches = await API.matches(); await refreshNotifications(); },
     async callhistory() { S.callHistory = await API.callHistory(); },
-    async settings() { if (!DEMO) S.allowIncomingCalls = await API.callSettings(); },
+    async settings() { if (!DEMO) S.allowIncomingCalls = await API.callSettings(); S.pushOn = API.pushStatus ? await API.pushStatus() : false; },
     async me() { S.me = await API.me(); },
     async edit() { S.me = await API.me(); S.editInterests = null; S.editLooking = null; },
     async vault() { S.matches = await API.matches(); S.vault = await API.vaultAssets(); for (const a of S.vault) { if (a.storage_path) { try { a.preview = await API.vaultImage(a.storage_path); } catch (_) {} } } },
@@ -796,7 +796,16 @@
         return guard(async () => { await API.updateProfile({ bio, city: $('#ect').value, interests: S.editInterests || S.me.interests, looking_for: S.editLooking || S.me.looking_for }); S.me = await API.me(); toast('Profile updated.'); S.hist.pop(); await go('me', { back: true }); });
       }
       case 'rmphoto': return guard(async () => { await API.removePhoto(+id); S.me = await API.me(); toast('Photo removed.'); });
-      case 'pushenable': return guard(async () => { await API.enablePush(); toast('This device is subscribed to push alerts.'); });
+      case 'pushenable': {
+        if (!API.enablePush) return toast('Push alerts are not available in demo mode.');
+        const want = !S.pushOn;
+        S.pushOn = want; render(); // slide immediately; undo if it fails
+        try {
+          if (want) await API.enablePush(); else await API.disablePush();
+          toast(want ? 'Push alerts are on for this device.' : 'Push alerts are off for this device.');
+        } catch (e) { S.pushOn = !want; render(); toast(U.friendly(e)); }
+        return;
+      }
       case 'soundtoggle': {
         const p = window.AkomaSounds && window.AkomaSounds.preferences();
         if (!p) return;

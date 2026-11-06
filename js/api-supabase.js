@@ -169,7 +169,9 @@
       if (!row) { _me = null; return null; }
       try { const beacon = await ok(sb.from('looking_tonight').select('mode,expires_at').eq('user_id',uid()).maybeSingle()); row.looking_tonight_mode=beacon && beacon.mode; row.looking_tonight_until=beacon && beacon.expires_at; } catch (_) {}
       const photoUrls = await urls(row.photos);
-      _me = Object.assign({}, row, { photoPaths: row.photos.slice(), photos: photoUrls.filter(Boolean), isAdmin: row.role === 'admin' && row.status === 'approved' });
+      // Keep photoPaths and photos index-aligned (a photo without a signed link is skipped in both).
+      const shown = row.photos.map((path, i) => ({ path, url: photoUrls[i] })).filter((x) => x.url);
+      _me = Object.assign({}, row, { photoPaths: shown.map((x) => x.path), allPhotoPaths: row.photos.slice(), photos: shown.map((x) => x.url), isAdmin: row.role === 'admin' && row.status === 'approved' });
       return _me;
     },
     async createProfile(f) {
@@ -201,6 +203,23 @@
     async vaultImage(path) { const res = await mediaFn({ action: 'vault-download', path }); return URL.createObjectURL(await res.blob()); },
     async deleteVault(assetId) { const path=await ok(sb.rpc('delete_vault_asset',{p_asset:assetId})); if(path) await ok(sb.storage.from('vault-media').remove([path])); return true; },
     async setOnlineVisibility(visible) { await ok(sb.rpc('set_online_visibility', { p_visible: !!visible })); _me = null; },
+    async pushStatus() {
+      try {
+        if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window) || Notification.permission !== 'granted') return false;
+        const sub = await (await navigator.serviceWorker.ready).pushManager.getSubscription();
+        if (!sub) return false;
+        const row = await ok(sb.from('push_subscriptions').select('endpoint').eq('endpoint', sub.endpoint).eq('user_id', uid()).maybeSingle());
+        return !!row;
+      } catch (_) { return false; }
+    },
+    async disablePush() {
+      const reg = await navigator.serviceWorker.ready; const sub = await reg.pushManager.getSubscription();
+      if (sub) {
+        await ok(sb.from('push_subscriptions').delete().eq('endpoint', sub.endpoint));
+        try { await sub.unsubscribe(); } catch (_) {}
+      }
+      return true;
+    },
     async enablePush() {
       if (!('serviceWorker' in navigator) || !('PushManager' in window) || !('Notification' in window)) throw new Error('Push alerts are not supported by this browser.');
       if (!C.VAPID_PUBLIC_KEY) throw new Error('Push delivery is not configured yet. Add the VAPID public key and deploy the push sender first.');
@@ -212,17 +231,24 @@
     async heartbeat() { if (uid()) await ok(sb.rpc('heartbeat')); },
     async addPhoto(blob) {
       const me = await ensureMe();
-      if (me.photoPaths.length >= 6) throw new Error('too_many_photos');
+      if (me.allPhotoPaths.length >= 6) throw new Error('too_many_photos');
       const path = uid() + '/' + uuid() + '.jpg';
       await ok(sb.storage.from('photos').upload(path, blob, { contentType: 'image/jpeg' }));
-      const next=me.photoPaths.concat(path);
-      try { await ok(sb.from('profiles').update({ photos: next }).eq('id', uid())); me.photoPaths=next; }
+      const next=me.allPhotoPaths.concat(path);
+      try { await ok(sb.from('profiles').update({ photos: next }).eq('id', uid())); _me = null; }
       catch (e) { await sb.storage.from('photos').remove([path]); throw e; }
     },
     async removePhoto(index) {
-      const me = await ensureMe();
+      await API.me(); // fresh copy so the index matches what is on screen
+      const me = _me;
       const path = me.photoPaths[index]; if (!path) return;
-      await ok(sb.from('profiles').update({ photos: me.photoPaths.filter((_, i) => i !== index) }).eq('id', uid()));
+      const next = me.allPhotoPaths.filter((p) => p !== path);
+      await ok(sb.from('profiles').update({ photos: next }).eq('id', uid()));
+      // Read back: if the database kept the photo, say so instead of pretending it was removed.
+      const check = await ok(sb.from('profiles').select('photos').eq('id', uid()).maybeSingle());
+      if (check && check.photos.includes(path)) throw new Error('Could not remove the photo. Make sure profile_edits_no_approval_migration.sql has been run in Supabase.');
+      try { await sb.storage.from('photos').remove([path]); } catch (_) {}
+      urlCache.delete('photos/' + path);
     },
     async uploadVerification(kind, blob) {
       if (kind !== 'selfie') throw new Error('ID verification is not used on Akoma.');
